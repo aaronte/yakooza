@@ -1,0 +1,301 @@
+<div
+  [ngStyle]="{
+    maxWidth: '960px',
+    margin: '0 auto',
+    width: '95vw',
+    minHeight: '100vh'
+  }"
+  fxLayout="column"
+  fxLayoutAlign="space-between start"
+>
+  <div [ngStyle]="{ width: '100%' }">
+    <nz-page-header nzTitle="Game room" [nzSubtitle]="'ID: ' + 'xxx'">
+    </nz-page-header>
+    <div [ngStyle]="{ padding: '0 24px', width: '100%' }" fxLayout="row">
+      <div fxFlex="calc(50% - 1px)">
+        <div
+          fxLayout="row"
+          fxLayoutGap="16px"
+          [ngStyle]="{ marginBottom: '24px' }"
+        >
+          <div>
+            Deck -
+            <span style="color: #a8a8a8"> {{ this.deck.length }} cards</span>
+          </div>
+          <div>
+            Discard -
+            <span style="color: #a8a8a8">
+              {{ this.discardPile.getValue().length }} cards
+            </span>
+          </div>
+        </div>
+        <div fxLayout="row" fxLayoutGap="16px">
+          <div
+            *ngFor="
+              let cardChunk of playerCardChunks.getValue();
+              let chunkIndex = index
+            "
+          >
+            <div
+              *ngFor="
+                let cards of cardChunk | slice: 0:5;
+                let playerIndex = index
+              "
+              [ngStyle]="{ marginBottom: '16px' }"
+            >
+              <p [ngStyle]="{ marginBottom: '8px' }">
+                <b>Player {{ playerIndex + chunkIndex * 5 + 1 }}</b>
+              </p>
+              <div
+                fxLayout="row"
+                fxLayoutAlign="start center"
+                fxLayoutGap="-32px"
+              >
+                <app-card
+                  *ngFor="let card of cards"
+                  [card]="card"
+                  size="small"
+                  [hidden]="true"
+                >
+                </app-card>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div fxFlex="50%">
+        <div
+          fxLayout="row"
+          fxLayoutGap="16px"
+          [ngStyle]="{
+            marginBottom: '24px'
+          }"
+        >
+          <div>Gameplay</div>
+        </div>
+        <div
+          [ngStyle]="{
+            maxHeight: '500px',
+            height: '100%',
+            overflowY: 'scroll',
+            border: '1px solid #D3D3D3',
+            borderRadius: '4px',
+            padding: '16px 16px 0'
+          }"
+          class="u-showScrollBar"
+        >
+          <nz-timeline>
+            <nz-timeline-item nzColor="gray">
+              Game is starting - player with the lowest hand value under
+              {{ winningThreshold }} wins. Good luck!
+            </nz-timeline-item>
+            <nz-timeline-item nzColor="green">
+              <p [ngStyle]="{ marginBottom: '8px' }">Player 1's turn...</p>
+              <p [ngStyle]="{ marginBottom: '8px' }">
+                First... what do you want to discard?
+              </p>
+              <div
+                fxLayout="row"
+                fxLayoutGap="8px"
+                fxLayoutAlign="start center"
+                [ngStyle]="{
+                  marginBottom: '16px',
+                  padding: '16px',
+                  border: '1px solid #D3D3D3',
+                  minHeight: '90px'
+                }"
+                cdkDropList
+                #dropZoneList="cdkDropList"
+                [cdkDropListData]="gameState.getValue().dropZone"
+                [cdkDropListConnectedTo]="[playerHandList]"
+                class="example-list"
+                cdkDropListOrientation="horizontal"
+                (cdkDropListDropped)="drop($event)"
+              >
+                <app-card
+                  *ngFor="let card of gameState.getValue().dropZone"
+                  class="u-display-block"
+                  [card]="card"
+                  size="small"
+                  cdkDrag
+                >
+                </app-card>
+              </div>
+              <div
+                fxLayout="row"
+                fxLayoutGap="8px"
+                [ngStyle]="{ marginBottom: '8px' }"
+              >
+                <button
+                  nz-button
+                  nzType="default"
+                  [disabled]="
+                    !isDiscardValid(
+                      gameState.getValue().dropZone,
+                      playerCards.getValue()[currentPlayer]
+                    )
+                  "
+                  (click)="
+                    discard(
+                      playerCards.getValue()[currentPlayer],
+                      gameState.getValue().dropZone
+                    )
+                  "
+                >
+                  Confirm drop
+                </button>
+              </div>
+              <p [ngStyle]="{ marginBottom: '8px' }">
+                Next... do you want to pick up from the deck or discard pile?
+              </p>
+              <div
+                fxLayout="row"
+                fxLayoutAlign="start center"
+                fxLayoutGap="8px"
+              >
+                <div fxFlex="76px">
+                  <p [ngStyle]="{ marginBottom: '4px' }">Deck</p>
+                  <div
+                    [ngStyle]="{
+                      padding: '16px',
+                      border: '1px solid #D3D3D3',
+                      minHeight: '90px',
+                      borderRadius: '4px'
+                    }"
+                    cdkDropList
+                    #dropZoneList="cdkDropList"
+                    [cdkDropListData]="deck"
+                    [cdkDropListConnectedTo]="[playerHandList]"
+                    class="example-list"
+                    cdkDropListOrientation="horizontal"
+                    (cdkDropListDropped)="drop($event)"
+                    fxLayout="row"
+                    fxLayoutGap="-100px"
+                  >
+                    <app-card
+                      *ngFor="let card of deck"
+                      class="u-display-block"
+                      [card]="card"
+                      [hidden]="true"
+                      [hideShadow]="true"
+                      size="small"
+                      cdkDrag
+                    >
+                    </app-card>
+                  </div>
+                </div>
+                <p fxFlex="24px" [ngStyle]="{ textAlign: 'center' }">or</p>
+                <div fxFlex="100%">
+                  <p [ngStyle]="{ marginBottom: '4px' }">Discard</p>
+                  <div
+                    [ngStyle]="{
+                      padding: '16px',
+                      border: '1px solid #D3D3D3',
+                      minHeight: '90px',
+                      borderRadius: '4px'
+                    }"
+                    cdkDropList
+                    #discardPickupList="cdkDropList"
+                    [cdkDropListData]="gameState.getValue().discard[0]"
+                    [cdkDropListConnectedTo]="[playerHandList]"
+                    class="example-list"
+                    cdkDropListOrientation="horizontal"
+                    (cdkDropListDropped)="drop($event)"
+                    fxLayout="row"
+                    fxLayoutGap="8px"
+                  >
+                    <app-card
+                      *ngFor="
+                        let card of gameState.getValue()
+                          .discard[0] as discardPile;
+                        let cardIndex = index
+                      "
+                      class="u-display-block"
+                      [card]="card"
+                      [hideShadow]="true"
+                      size="small"
+                      cdkDrag
+                      [ngStyle]="{
+                        opacity:
+                          0 !== cardIndex &&
+                          discardPile?.length - 1 !== cardIndex
+                            ? '.3'
+                            : '1'
+                      }"
+                      [cdkDragDisabled]="
+                        0 !== cardIndex && discardPile?.length - 1 !== cardIndex
+                      "
+                    >
+                    </app-card>
+                  </div>
+                </div>
+              </div>
+            </nz-timeline-item>
+            <nz-timeline-item nzColor="gray">
+              Player 2 is next
+            </nz-timeline-item>
+          </nz-timeline>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div
+    [ngStyle]="{ padding: '24px 0', width: '100%' }"
+    fxLayout="row"
+    fxLayoutAlign="center center"
+  >
+    <div>
+      <div [ngStyle]="{ marginBottom: '8px' }">
+        <nz-radio-group [(ngModel)]="currentPlayer" nzSize="small">
+          <label
+            *ngFor="
+              let player of playerCards.getValue();
+              let playerIndex = index
+            "
+            nz-radio-button
+            [nzValue]="playerIndex"
+            >Player {{ playerIndex + 1 }}</label
+          >
+        </nz-radio-group>
+      </div>
+      <div [ngStyle]="{ marginBottom: '8px' }">
+        Your hand (Value:
+        {{ calculateHandValue(playerCards.getValue()[currentPlayer]) }})
+      </div>
+      <div
+        fxLayout="row"
+        fxLayoutGap="8px"
+        fxLayoutAlign="center center"
+        [ngStyle]="{ marginBottom: '16px', padding: '8px' }"
+        cdkDropList
+        #playerHandList="cdkDropList"
+        [cdkDropListData]="playerCards.getValue()[currentPlayer]"
+        [cdkDropListConnectedTo]="[dropZoneList]"
+        class="example-list"
+        cdkDropListOrientation="horizontal"
+        (cdkDropListDropped)="drop($event)"
+      >
+        <app-card
+          *ngFor="let card of playerCards.getValue()[currentPlayer]"
+          class="u-display-block"
+          [card]="card"
+          cdkDrag
+          size="small"
+        >
+        </app-card>
+      </div>
+      <div fxLayout="row" fxLayoutGap="8px">
+        <button
+          nz-button
+          nzType="default"
+          [disabled]="
+            winningThreshold <=
+            calculateHandValue(playerCards.getValue()[currentPlayer])
+          "
+        >
+          Yaniv!
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

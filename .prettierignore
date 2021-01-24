@@ -1,0 +1,6 @@
+coverage/
+dist/
+dist-legacy/
+dist-ssr/
+
+package-lock.json

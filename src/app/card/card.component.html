@@ -1,0 +1,75 @@
+<div
+  *ngIf="'small' !== size"
+  [ngStyle]="{
+    height: '100px',
+    width: '80px',
+    padding: hidden ? '8px' : '12px',
+    borderRadius: '4px',
+    fontSize: '16px',
+    color: 'heart' === card.suit || 'diamond' === card.suit ? 'red' : 'black',
+    backgroundColor: 'white',
+    border: '1px solid #D3D3D3'
+  }"
+  [ngClass]="{ 'mat-elevation-z2': !hideShadow }"
+  fxLayout="column"
+  fxLayoutAlign="space-between space-between"
+>
+  <ng-container [ngTemplateOutlet]="cardBody"></ng-container>
+</div>
+<div
+  *ngIf="'small' === size"
+  [ngStyle]="{
+    height: '56px',
+    width: '40px',
+    padding: '4px',
+    borderRadius: '4px',
+    fontSize: '10px',
+    color: 'heart' === card.suit || 'diamond' === card.suit ? 'red' : 'black',
+    backgroundColor: 'white',
+    border: '1px solid #D3D3D3'
+  }"
+  [ngClass]="{ 'mat-elevation-z2': !hideShadow }"
+  fxLayout="column"
+  fxLayoutAlign="space-between space-between"
+>
+  <ng-container [ngTemplateOutlet]="cardBody"></ng-container>
+</div>
+
+<ng-template #cardBody>
+  <ng-container *ngIf="!hidden">
+    <div fxLayout="row" fxLayoutAlign="start start">
+      <p>{{ card.cardName }}</p>
+    </div>
+    <p
+      fxLayout="row"
+      fxLayoutAlign="center center"
+      [ngStyle]="{ fontSize: 'small' === size ? '12px' : '24px' }"
+    >
+      <ng-container *ngIf="'heart' === card.suit"> ❤️ </ng-container>
+      <ng-container *ngIf="'diamond' === card.suit"> ♦️ </ng-container>
+      <ng-container *ngIf="'spade' === card.suit"> ♠️ </ng-container>
+      <ng-container *ngIf="'club' === card.suit"> ♣️ </ng-container>
+      <ng-container *ngIf="'' === card.suit"> 👑 </ng-container>
+    </p>
+    <div fxLayout="row" fxLayoutAlign="end end">
+      <p>{{ card.cardName }}</p>
+    </div>
+  </ng-container>
+  <ng-container *ngIf="hidden">
+    <div
+      [ngStyle]="{
+        backgroundColor: 'skyblue',
+        height: '100%',
+        borderRadius: '4px'
+      }"
+    >
+      <p
+        fxLayout="row"
+        fxLayoutAlign="center center"
+        [ngStyle]="{ fontSize: '18px', height: '100%' }"
+      >
+        🚲
+      </p>
+    </div>
+  </ng-container>
+</ng-template>
