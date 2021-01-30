@@ -73,6 +73,20 @@ export class DatabaseService {
   }
 
   updateGameState(gameId: string, update: any, name: string) {
-    return this.firestore.collection('games').doc(gameId).update(update);
+    const transformedUpdate = {
+      ...update,
+      discard: update.discard.reduce(
+        (result, item, index) => ({ ...result, [index]: item }),
+        {},
+      ),
+      playerCards: (update.playerCards || []).reduce(
+        (result, item, index) => ({ ...result, [index]: item }),
+        {},
+      ),
+    };
+    return this.firestore
+      .collection('games')
+      .doc(gameId)
+      .update(transformedUpdate);
   }
 }

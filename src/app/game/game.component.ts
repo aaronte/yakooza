@@ -7,6 +7,9 @@ import {
 } from '@angular/cdk/drag-drop';
 import { NzDrawerRef, NzDrawerService } from 'ng-zorro-antd/drawer';
 import { ActivatedRoute } from '@angular/router';
+import { filter, map, skip, take, tap } from 'rxjs/operators';
+
+import { DatabaseService } from '../service/database.service';
 
 import { Card, cards, joker, numbers } from '../libs/cards';
 import { permutations } from '../libs/permutations.libs';
@@ -20,8 +23,6 @@ import sortBy from 'lodash-es/sortBy';
 import groupBy from 'lodash-es/groupBy';
 import uniqBy from 'lodash-es/uniqBy';
 import remove from 'lodash-es/remove';
-import { DatabaseService } from '../service/database.service';
-import { filter, take, tap } from 'rxjs/operators';
 
 /*
  * TODO:
@@ -42,8 +43,8 @@ export class GameComponent implements OnInit {
     $implicit: { gameState: any };
     drawerRef: NzDrawerRef<string>;
   }>;
-  deck: Card[] = [];
-  playerCards: BehaviorSubject<Card[][]> = new BehaviorSubject([]);
+  playerCardChunks: BehaviorSubject<Card[][][]> = new BehaviorSubject([]);
+  winningThreshold = 11;
   gameState = new BehaviorSubject({
     currentPlayer: 0,
     currentRound: 0,
@@ -54,20 +55,22 @@ export class GameComponent implements OnInit {
     rounds: [],
     log: [],
     dropZone: [],
+    playerCards: [],
     isDropZoneConfirmed: false,
-    currentPlayerTurn: {
-      mode: 'discard',
-    },
+    currentPlayerTurn: { mode: 'discard' },
     scoreboard: [{ handValues: [], scores: [], isLowestInRound: [], total: 0 }],
   });
-  playerCardChunks: BehaviorSubject<Card[][][]> = new BehaviorSubject([]);
-  winningThreshold = 11;
-  devMode = true;
-  viewingPlayer = 0;
   gameState$ = new BehaviorSubject(null);
   _gameState$ = this.databaseService
     .getGameReference(this.route.snapshot.paramMap.get('gameId'))
     .valueChanges()
+    .pipe(
+      map((game: any) => ({
+        ...game,
+        discard: Object.values(game.discard),
+        playerCards: Object.values(game.playerCards),
+      })),
+    )
     .subscribe(this.gameState$);
   you: number;
 
@@ -88,34 +91,43 @@ export class GameComponent implements OnInit {
             this.gameState.getValue().players,
             (i) => i === this.route.snapshot.queryParamMap.get('name'),
           );
-          console.log({
-            players: this.gameState.getValue().players,
-            name: this.route.snapshot.queryParamMap.get('name'),
-            you: this.you,
-          });
           this.renewGame();
-          console.log('hello');
         }),
       )
       .subscribe();
+    this.gameState$
+      .pipe(
+        filter((state) => !!state),
+        skip(1),
+        tap((game: any) => {
+          console.log({ game });
+          this.gameState.next(game);
+        }),
+      )
+      .subscribe();
+
+    this.gameState.subscribe((game) => {
+      this.playerCardChunks.next(chunk(game.playerCards, 5));
+    });
   }
 
-  dealCards(numberOfPlayers: number) {
+  dealCards(initialDeck, numberOfPlayers: number) {
     const playerCards: Card[][] = [];
+    let deck = initialDeck;
     for (let i = 0; i < numberOfPlayers; i++) {
       playerCards.push([]);
       for (let y = 0; y < 5; y++) {
-        const { drawnCard, newDeck } = this.drawFromDeck(this.deck);
+        const { drawnCard, newDeck } = this.drawFromDeck(deck);
         playerCards[i].push(drawnCard);
-        this.deck = newDeck;
+        deck = newDeck;
       }
     }
-    this.playerCards.next(playerCards);
+    return { deck, playerCards };
   }
 
   drawFromPile(deck: Card[], hand: Card[]) {
     const { drawnCard, newDeck } = this.drawFromDeck(deck);
-    this.deck = newDeck;
+    this.updateGameState({ deck: newDeck });
     hand.push(drawnCard);
   }
 
@@ -123,15 +135,29 @@ export class GameComponent implements OnInit {
     remove(hand, (card) =>
       discardCards.map(({ id }) => id).some((id) => id === card.id),
     );
-    this.gameState.next({
+    this.updateGameState({
       ...this.gameState.getValue(),
       dropZone: [],
       discard: [discardCards, ...this.gameState.getValue().discard],
     });
   }
 
+  updateGameState(update: any) {
+    if (!this.gameState.getValue().gameName) {
+      return;
+    }
+    this.databaseService.updateGameState(
+      this.gameState.getValue().gameName,
+      {
+        ...this.gameState.getValue(),
+        ...update,
+      },
+      this.gameState.getValue().players[this.you],
+    );
+  }
+
   lockDropZone() {
-    this.gameState.next({
+    this.updateGameState({
       ...this.gameState.getValue(),
       isDropZoneConfirmed: true,
       currentPlayerTurn: {
@@ -278,9 +304,9 @@ export class GameComponent implements OnInit {
 
   callGame() {
     const scoreboard = this.gameState.getValue().scoreboard;
-    const playerHandValues = this.playerCards
+    const playerHandValues = this.gameState
       .getValue()
-      .map((hand) => this.calculateHandValue(hand));
+      .playerCards.map((hand) => this.calculateHandValue(hand));
     const newScoreboard = scoreboard.map((scoreboardItem, index) => {
       const currentHandValue = playerHandValues[index];
       const newScores = [...scoreboardItem.scores, currentHandValue];
@@ -304,7 +330,7 @@ export class GameComponent implements OnInit {
             : total,
       };
     });
-    this.gameState.next({
+    this.updateGameState({
       ...this.gameState.getValue(),
       scoreboard: newScoreboard,
     });
@@ -331,16 +357,12 @@ export class GameComponent implements OnInit {
   }
 
   goNextPlayer() {
-    this.databaseService.updateGameState(
-      this.gameState.getValue().gameName,
-      {
-        currentPlayer: this.getNextPlayer(
-          this.gameState.getValue().currentPlayer,
-          this.gameState.getValue().players.length,
-        ),
-      },
-      this.route.snapshot.queryParamMap.get('name'),
-    );
+    this.updateGameState({
+      currentPlayer: this.getNextPlayer(
+        this.gameState.getValue().currentPlayer,
+        this.gameState.getValue().players.length,
+      ),
+    });
   }
 
   isPhase(phase: string) {
@@ -351,7 +373,7 @@ export class GameComponent implements OnInit {
 
   processNextTurn() {
     const currentValue = this.gameState.getValue();
-    this.gameState.next({
+    this.updateGameState({
       ...currentValue,
       discard: [currentValue.dropZone, ...currentValue.discard],
       isDropZoneConfirmed: false,
@@ -377,14 +399,6 @@ export class GameComponent implements OnInit {
         gameState: this.gameState.getValue(),
       },
     });
-
-    drawerRef.afterOpen.subscribe(() => {
-      console.log('Drawer(Template) open');
-    });
-
-    drawerRef.afterClose.subscribe(() => {
-      console.log('Drawer(Template) close');
-    });
   }
 
   startNewRound() {
@@ -392,9 +406,9 @@ export class GameComponent implements OnInit {
   }
 
   renewGame() {
-    this.gameState.next({
+    this.updateGameState({
       ...this.gameState.getValue(),
-      scoreboard: this.gameState.getValue().players.map((player) => ({
+      scoreboard: this.gameState.getValue().players.map(() => ({
         handValues: [],
         isLowestInRound: [],
         scores: [],
@@ -405,19 +419,20 @@ export class GameComponent implements OnInit {
   }
 
   resetCardDistribution() {
-    this.deck = this.calculateInitialDeck(
+    const initialDeck = this.calculateInitialDeck(
       this.gameState.getValue().players.length,
     );
-    this.dealCards(this.gameState.getValue().players.length);
-    const { newDeck, drawnCard } = this.drawFromDeck(this.deck);
-    this.deck = newDeck;
-    this.gameState.next({
+    const { deck, playerCards } = this.dealCards(
+      initialDeck,
+      this.gameState.getValue().players.length,
+    );
+    const { newDeck, drawnCard } = this.drawFromDeck(deck);
+    this.updateGameState({
       ...this.gameState.getValue(),
+      deck: newDeck,
       discard: [[drawnCard]],
       dropZone: [],
-    });
-    this.playerCards.subscribe((playerCards) => {
-      this.playerCardChunks.next(chunk(playerCards, 5));
+      playerCards: playerCards,
     });
   }
 }

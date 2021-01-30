@@ -32,7 +32,9 @@
         >
           <div>
             Deck -
-            <span style="color: #a8a8a8"> {{ deck.length }} cards</span>
+            <span style="color: #a8a8a8">
+              {{ gameState.getValue().deck.length }} cards</span
+            >
           </div>
           <div>
             Discard -
@@ -112,7 +114,7 @@
                 }"
                 cdkDropList
                 #dropZoneList="cdkDropList"
-                [cdkDropListData]="deck"
+                [cdkDropListData]="gameState.getValue().deck"
                 [cdkDropListConnectedTo]="[playerHandList]"
                 class="example-list"
                 cdkDropListOrientation="horizontal"
@@ -122,7 +124,7 @@
                 [cdkDropListEnterPredicate]="isPhase('')"
               >
                 <app-card
-                  *ngFor="let card of deck"
+                  *ngFor="let card of gameState.getValue().deck"
                   class="u-display-block"
                   [card]="card"
                   [hidden]="true"
@@ -215,7 +217,7 @@
           <nz-timeline>
             <nz-timeline-item
               [nzColor]="
-                'draw' !== gameState.getValue().currentPlayerTurn.mode
+                'discard' === gameState.getValue().currentPlayerTurn.mode
                   ? 'green'
                   : 'gray'
               "
@@ -264,7 +266,9 @@
                   [disabled]="
                     !isDiscardValid(
                       gameState.getValue().dropZone,
-                      playerCards.getValue()[gameState.getValue().currentPlayer]
+                      gameState.getValue().playerCards[
+                        gameState.getValue().currentPlayer
+                      ]
                     ) || gameState.getValue().isDropZoneConfirmed
                   "
                   (click)="lockDropZone()"
@@ -331,7 +335,7 @@
         cdkDropList
         #playerHandList="cdkDropList"
         [cdkDropListData]="
-          playerCards.getValue()[gameState.getValue().currentPlayer]
+          gameState.getValue().playerCards[gameState.getValue().currentPlayer]
         "
         [cdkDropListConnectedTo]="[dropZoneList, discardPickupList]"
         class="example-list"
@@ -340,7 +344,7 @@
       >
         <app-card
           *ngFor="
-            let card of playerCards.getValue()[
+            let card of gameState.getValue().playerCards[
               gameState.getValue().currentPlayer
             ]
           "
@@ -352,7 +356,7 @@
         </app-card>
       </div>
       <div
-        *ngIf="!!playerCards.getValue().length"
+        *ngIf="!!gameState.getValue().playerCards.length"
         fxLayout="row"
         fxLayoutGap="8px"
         fxLayoutAlign="space-between center"
@@ -361,7 +365,9 @@
           Your hand (Value:
           {{
             calculateHandValue(
-              playerCards.getValue()[gameState.getValue().currentPlayer]
+              gameState.getValue().playerCards[
+                gameState.getValue().currentPlayer
+              ]
             )
           }})
         </p>
@@ -371,7 +377,9 @@
           [disabled]="
             winningThreshold <
               calculateHandValue(
-                playerCards.getValue()[gameState.getValue().currentPlayer]
+                gameState.getValue().playerCards[
+                  gameState.getValue().currentPlayer
+                ]
               ) || !!gameState.getValue().dropZone.length
           "
           (click)="callGame(); startNewRound()"
