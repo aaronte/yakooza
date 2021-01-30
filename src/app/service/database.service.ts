@@ -32,6 +32,7 @@ export class DatabaseService {
         scoreboard: [
           { handValues: [], scores: [], isLowestInRound: [], total: 0 },
         ],
+        recognizeGameCalled: [],
       });
   }
 

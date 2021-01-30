@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 import { NzTimelineModule } from 'ng-zorro-antd/timeline';
 import {
   CheckCircleOutline,
+  HourglassOutline,
   SyncOutline,
 } from '@ant-design/icons-angular/icons';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -36,7 +37,7 @@ import { GameComponent } from './game.component';
     NzButtonModule,
     NzAlertModule,
     NzCardModule,
-    NzIconModule.forChild([CheckCircleOutline, SyncOutline]),
+    NzIconModule.forChild([CheckCircleOutline, HourglassOutline, SyncOutline]),
     NzPageHeaderModule,
     NzRadioModule,
     FormsModule,

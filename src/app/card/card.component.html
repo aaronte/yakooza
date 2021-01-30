@@ -43,7 +43,10 @@
     <p
       fxLayout="row"
       fxLayoutAlign="center center"
-      [ngStyle]="{ fontSize: 'small' === size ? '12px' : '24px' }"
+      [ngStyle]="{
+        fontSize: 'small' === size ? '18px' : '24px',
+        lineHeight: 'small' === size ? '12px' : '24px'
+      }"
     >
       <ng-container *ngIf="'heart' === card.suit"> ❤️ </ng-container>
       <ng-container *ngIf="'diamond' === card.suit"> ♦️ </ng-container>

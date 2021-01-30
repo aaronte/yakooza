@@ -7,7 +7,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { NzDrawerRef, NzDrawerService } from 'ng-zorro-antd/drawer';
 import { ActivatedRoute } from '@angular/router';
-import { filter, map, tap } from 'rxjs/operators';
+import { filter, map, pairwise, tap } from 'rxjs/operators';
 
 import { DatabaseService } from '../service/database.service';
 
@@ -61,6 +61,7 @@ export class GameComponent implements OnInit {
     isDropZoneConfirmed: false,
     currentPlayerTurn: { mode: 'discard' },
     scoreboard: [{ handValues: [], scores: [], isLowestInRound: [], total: 0 }],
+    recognizeGameCalled: [],
   });
   gameState$ = new BehaviorSubject(null);
   _gameState$ = this.databaseService
@@ -94,6 +95,20 @@ export class GameComponent implements OnInit {
             this.gameState.getValue().players,
             (i) => i === this.route.snapshot.queryParamMap.get('name'),
           );
+        }),
+      )
+      .subscribe();
+    this.gameState$
+      .pipe(
+        filter((state) => !!state),
+        pairwise(),
+        tap(([oldGameState, newGameState]) => {
+          if (
+            oldGameState.scoreboard[0].scores.length <
+            newGameState.scoreboard[0].scores.length
+          ) {
+            this.openTemplate();
+          }
         }),
       )
       .subscribe();
@@ -245,17 +260,6 @@ export class GameComponent implements OnInit {
       );
       if ('draw' === this.gameState.getValue().currentPlayerTurn.mode) {
         this.processNextTurn();
-
-        // if (0 === this.gameState.getValue().deck.length) {
-        //   const oldDiscard = this.gameState.getValue().discard;
-        //   const newDiscard = [oldDiscard[0]];
-        //   this.deck = shuffle(flatten(oldDiscard));
-        //   this.gameState.next({
-        //     ...this.gameState.getValue(),
-        //     deck: this.deck,
-        //     discard: newDiscard,
-        //   });
-        // }
       }
     }
   }
@@ -364,6 +368,16 @@ export class GameComponent implements OnInit {
         this.gameState.getValue().players.length,
       ),
     };
+    let newDeckUpdate = {};
+    if (0 === currentValue.deck.length) {
+      const oldDiscard = currentValue.discard;
+      const newDiscard = [oldDiscard[0]];
+      const deck = shuffle(flatten(oldDiscard));
+      newDeckUpdate = {
+        deck,
+        discard: newDiscard,
+      };
+    }
     await this.updateGameState({
       ...currentValue,
       ...goNextPlayerUpdate,
@@ -374,6 +388,7 @@ export class GameComponent implements OnInit {
         mode: 'discard',
       },
       dropZone: [],
+      ...newDeckUpdate,
     });
   }
 
@@ -406,6 +421,7 @@ export class GameComponent implements OnInit {
         scores: [],
         total: 0,
       })),
+      recognizeGameCalled: this.gameState.getValue().players.map(() => false),
     });
   }
 

@@ -271,6 +271,11 @@
           </div>
           <nz-timeline>
             <nz-timeline-item
+              [nzDot]="
+                'discard' === gameState.getValue().currentPlayerTurn.mode
+                  ? inProgressDotTemplate
+                  : completedDotTemplate
+              "
               [nzColor]="
                 'discard' === gameState.getValue().currentPlayerTurn.mode
                   ? 'green'
@@ -278,7 +283,16 @@
               "
             >
               <p [ngStyle]="{ marginBottom: '8px' }">
-                First... discard card(s) below 👇
+                <ng-container
+                  *ngIf="you === gameState.getValue().currentPlayer"
+                >
+                  First... discard card(s) below 👇
+                </ng-container>
+                <ng-container
+                  *ngIf="you !== gameState.getValue().currentPlayer"
+                >
+                  Their discard will show below 👇
+                </ng-container>
               </p>
               <div
                 fxLayout="row"
@@ -310,6 +324,7 @@
                 </app-card>
               </div>
               <div
+                *ngIf="you === gameState.getValue().currentPlayer"
                 fxLayout="row"
                 fxLayoutGap="8px"
                 [ngStyle]="{ marginBottom: '8px' }"
@@ -343,15 +358,40 @@
               </div>
             </nz-timeline-item>
             <nz-timeline-item
+              [nzDot]="
+                'draw' === gameState.getValue().currentPlayerTurn.mode
+                  ? inProgressDotTemplate
+                  : incomingDotTemplate
+              "
               [nzColor]="
                 'draw' === gameState.getValue().currentPlayerTurn.mode
                   ? 'green'
                   : 'gray'
               "
             >
-              <p>Next... pick a card from the deck or the discard pile.</p>
+              <p>
+                <ng-container
+                  *ngIf="you === gameState.getValue().currentPlayer"
+                >
+                  Next... pick a card from the deck or the discard pile.
+                </ng-container>
+                <ng-container
+                  *ngIf="you !== gameState.getValue().currentPlayer"
+                >
+                  Choosing to pick up from the deck or the discard pile.
+                </ng-container>
+              </p>
             </nz-timeline-item>
           </nz-timeline>
+          <ng-template #incomingDotTemplate>
+            <i nz-icon nzType="hourglass" style="font-size: 16px"></i>
+          </ng-template>
+          <ng-template #inProgressDotTemplate>
+            <i nz-icon nzType="sync" style="font-size: 16px" nzSpin></i>
+          </ng-template>
+          <ng-template #completedDotTemplate>
+            <i nz-icon nzType="check-circle" style="font-size: 16px"></i>
+          </ng-template>
         </div>
       </div>
     </div>
