@@ -1,7 +1,7 @@
 import flatten from 'lodash-es/flatten';
 
 const suits = ['heart', 'diamond', 'spade', 'club'];
-const numbers = [
+export const numbers = [
   { id: 'A', value: 1 },
   { id: '2', value: 2 },
   { id: '3', value: 3 },
@@ -16,7 +16,7 @@ const numbers = [
   { id: 'Q', value: 10 },
   { id: 'K', value: 10 },
 ];
-const joker = { id: 'joker', cardName: 'Joker', value: 0, suit: '' };
+export const joker = { id: 'joker', cardName: 'Joker', value: 0, suit: '' };
 
 export interface Card {
   cardName: string;
@@ -30,8 +30,8 @@ export const cards: {
   value: number;
   suit: string;
 }[] = [
-  joker,
-  joker,
+  // joker,
+  // joker,
   ...flatten(
     suits.map((suit) => {
       return numbers.map((value, key) => ({
