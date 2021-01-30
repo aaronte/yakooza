@@ -1,0 +1,87 @@
+<div
+  [ngStyle]="{
+    maxWidth: '960px',
+    margin: '0 auto',
+    width: '95vw',
+    minHeight: '100vh'
+  }"
+>
+  <nz-page-header>
+    <nz-page-header-title>Yaniv</nz-page-header-title>
+  </nz-page-header>
+  <div
+    *ngIf="!route.snapshot.queryParamMap.get('name')"
+    [ngStyle]="{ padding: '24px' }"
+    fxLayout="row"
+    fxLayoutAlign="center center"
+  >
+    <div fxFlex="300px">
+      <form nz-form nzLayout="vertical" (ngSubmit)="createGame(gameId)">
+        <nz-form-item [ngStyle]="{ marginBottom: '16px' }">
+          <nz-form-label>Whats your name?</nz-form-label>
+          <nz-form-control>
+            <input
+              nz-input
+              placeholder="Type your name in..."
+              [(ngModel)]="name"
+              [ngModelOptions]="{ standalone: true }"
+              maxlength="15"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </form>
+      <button
+        nz-button
+        nzType="primary"
+        (click)="setName(name)"
+        [disabled]="!name"
+      >
+        Set name
+      </button>
+    </div>
+  </div>
+  <div
+    *ngIf="route.snapshot.queryParamMap.get('name')"
+    [ngStyle]="{ padding: '24px' }"
+    fxLayout="row"
+    fxLayoutGap="32px"
+  >
+    <div fxFlex="calc(30% - 32px)">
+      <h4 nz-typography [ngStyle]="{ marginBottom: '16px' }">Create game</h4>
+      <div>
+        <input
+          maxlength="4"
+          nz-input
+          nzSize="large"
+          placeholder="Game ID (i.e. XXXX)"
+          [ngStyle]="{ marginBottom: '16px' }"
+          [(ngModel)]="gameId"
+        />
+        <button
+          nz-button
+          nzType="primary"
+          (click)="createGame(gameId)"
+          [disabled]="!gameId"
+        >
+          Create game
+        </button>
+      </div>
+    </div>
+    <div fxFlex="70%">
+      <h4 nz-typography [ngStyle]="{ marginBottom: '16px' }">
+        Available games
+      </h4>
+      <a
+        *ngFor="let game of databaseService.games.getValue()"
+        class="u-display-block"
+        [routerLink]="['/games', game.gameName]"
+        [queryParams]="{ name: route.snapshot.queryParamMap.get('name') }"
+        queryParamsHandling="merge"
+      >
+        <nz-card [ngStyle]="{ marginBottom: '16px' }" class="u-display-block">
+          <p>Game code: {{ game.gameName }}</p>
+        </nz-card>
+      </a>
+    </div>
+  </div>
+</div>

@@ -1,4 +1,5 @@
 <div
+  *ngIf="!!route.snapshot.queryParamMap.get('name')"
   [ngStyle]="{
     maxWidth: '960px',
     margin: '0 auto',
@@ -12,7 +13,12 @@
   <div [ngStyle]="{ width: '100%' }">
     <nz-page-header>
       <nz-page-header-title>Game room</nz-page-header-title>
-      <nz-page-header-subtitle>ID: xxx</nz-page-header-subtitle>
+      <nz-page-header-subtitle
+        >id:
+        {{ route.snapshot.paramMap.get('gameId') }}
+        • name:
+        {{ route.snapshot.queryParamMap.get('name') }}
+      </nz-page-header-subtitle>
       <nz-page-header-extra>
         <button nz-button (click)="openTemplate()">Scoreboard</button>
       </nz-page-header-extra>
@@ -375,3 +381,22 @@
     </button>
   </div>
 </ng-template>
+<div
+  *ngIf="!route.snapshot.queryParamMap.get('name')"
+  [ngStyle]="{
+    maxWidth: '960px',
+    margin: '0 auto',
+    padding: '48px',
+    width: '95vw',
+    minHeight: '100vh'
+  }"
+  fxLayout="row"
+  fxLayoutAlign="center center"
+>
+  <div fxLayout="column" fxLayoutAlign="center center">
+    <h5 nz-typography [ngStyle]="{ marginBottom: '16px' }">
+      Something is wrong. Go back home and try again.
+    </h5>
+    <a [routerLink]="['/lobby']" nz-button nzType="primary">Go home</a>
+  </div>
+</div>

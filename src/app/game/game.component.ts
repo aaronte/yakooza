@@ -5,6 +5,8 @@ import {
   moveItemInArray,
   transferArrayItem,
 } from '@angular/cdk/drag-drop';
+import { NzDrawerRef, NzDrawerService } from 'ng-zorro-antd/drawer';
+import { ActivatedRoute } from '@angular/router';
 
 import { Card, cards, joker, numbers } from '../libs/cards';
 import { permutations } from '../libs/permutations.libs';
@@ -18,7 +20,6 @@ import sortBy from 'lodash-es/sortBy';
 import groupBy from 'lodash-es/groupBy';
 import uniqBy from 'lodash-es/uniqBy';
 import remove from 'lodash-es/remove';
-import { NzDrawerRef, NzDrawerService } from 'ng-zorro-antd/drawer';
 
 /*
  * TODO:
@@ -61,7 +62,10 @@ export class GameComponent implements OnInit {
   currentPlayer = 0;
   viewingPlayer = 0;
 
-  constructor(public drawerService: NzDrawerService) {}
+  constructor(
+    public drawerService: NzDrawerService,
+    public route: ActivatedRoute,
+  ) {}
 
   ngOnInit(): void {
     this.renewGame();

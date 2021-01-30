@@ -1,0 +1,11 @@
+{
+  "targets": {
+    "yakooza": {
+      "hosting": {
+        "yakooza": [
+          "yakooza"
+        ]
+      }
+    }
+  }
+}
