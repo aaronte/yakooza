@@ -74,9 +74,12 @@
       <a
         *ngFor="let game of databaseService.games.getValue()"
         class="u-display-block"
-        [routerLink]="['/games', game.gameName]"
-        [queryParams]="{ name: route.snapshot.queryParamMap.get('name') }"
-        queryParamsHandling="merge"
+        (click)="
+          addPlayerToGame(
+            game.gameName,
+            route.snapshot.queryParamMap.get('name')
+          )
+        "
       >
         <nz-card [ngStyle]="{ marginBottom: '16px' }" class="u-display-block">
           <p>Game code: {{ game.gameName }}</p>

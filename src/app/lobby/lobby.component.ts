@@ -42,4 +42,18 @@ export class LobbyComponent implements OnInit {
       queryParamsHandling: 'merge',
     });
   }
+
+  addPlayerToGame(gameId: string, name: string) {
+    this.databaseService
+      .addPlayerToGame(gameId, name)
+      .pipe(
+        tap(() =>
+          this.router.navigate(['/games', gameId], {
+            queryParams: { name: name.toLowerCase() },
+            queryParamsHandling: 'merge',
+          }),
+        ),
+      )
+      .subscribe();
+  }
 }

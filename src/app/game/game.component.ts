@@ -20,6 +20,8 @@ import sortBy from 'lodash-es/sortBy';
 import groupBy from 'lodash-es/groupBy';
 import uniqBy from 'lodash-es/uniqBy';
 import remove from 'lodash-es/remove';
+import { DatabaseService } from '../service/database.service';
+import { filter, take, tap } from 'rxjs/operators';
 
 /*
  * TODO:
@@ -43,10 +45,12 @@ export class GameComponent implements OnInit {
   deck: Card[] = [];
   playerCards: BehaviorSubject<Card[][]> = new BehaviorSubject([]);
   gameState = new BehaviorSubject({
+    currentPlayer: 0,
     currentRound: 0,
     deck: [],
     discard: [],
-    players: ['one', 'two', 'three', 'four'],
+    gameName: '',
+    players: [],
     rounds: [],
     log: [],
     dropZone: [],
@@ -59,16 +63,41 @@ export class GameComponent implements OnInit {
   playerCardChunks: BehaviorSubject<Card[][][]> = new BehaviorSubject([]);
   winningThreshold = 11;
   devMode = true;
-  currentPlayer = 0;
   viewingPlayer = 0;
+  gameState$ = new BehaviorSubject(null);
+  _gameState$ = this.databaseService
+    .getGameReference(this.route.snapshot.paramMap.get('gameId'))
+    .valueChanges()
+    .subscribe(this.gameState$);
+  you: number;
 
   constructor(
+    public databaseService: DatabaseService,
     public drawerService: NzDrawerService,
     public route: ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
-    this.renewGame();
+    this.gameState$
+      .pipe(
+        filter((state) => !!state),
+        take(1),
+        tap((game: any) => {
+          this.gameState.next(game);
+          this.you = findIndex(
+            this.gameState.getValue().players,
+            (i) => i === this.route.snapshot.queryParamMap.get('name'),
+          );
+          console.log({
+            players: this.gameState.getValue().players,
+            name: this.route.snapshot.queryParamMap.get('name'),
+            you: this.you,
+          });
+          this.renewGame();
+          console.log('hello');
+        }),
+      )
+      .subscribe();
   }
 
   dealCards(numberOfPlayers: number) {
@@ -197,16 +226,17 @@ export class GameComponent implements OnInit {
       );
       if ('draw' === this.gameState.getValue().currentPlayerTurn.mode) {
         this.processNextTurn();
-        if (0 === this.gameState.getValue().deck.length) {
-          const oldDiscard = this.gameState.getValue().discard;
-          const newDiscard = [oldDiscard[0]];
-          this.deck = shuffle(flatten(oldDiscard));
-          this.gameState.next({
-            ...this.gameState.getValue(),
-            deck: this.deck,
-            discard: newDiscard,
-          });
-        }
+
+        // if (0 === this.gameState.getValue().deck.length) {
+        //   const oldDiscard = this.gameState.getValue().discard;
+        //   const newDiscard = [oldDiscard[0]];
+        //   this.deck = shuffle(flatten(oldDiscard));
+        //   this.gameState.next({
+        //     ...this.gameState.getValue(),
+        //     deck: this.deck,
+        //     discard: newDiscard,
+        //   });
+        // }
       }
     }
   }
@@ -301,7 +331,16 @@ export class GameComponent implements OnInit {
   }
 
   goNextPlayer() {
-    this.currentPlayer = this.getNextPlayer();
+    this.databaseService.updateGameState(
+      this.gameState.getValue().gameName,
+      {
+        currentPlayer: this.getNextPlayer(
+          this.gameState.getValue().currentPlayer,
+          this.gameState.getValue().players.length,
+        ),
+      },
+      this.route.snapshot.queryParamMap.get('name'),
+    );
   }
 
   isPhase(phase: string) {
@@ -325,10 +364,8 @@ export class GameComponent implements OnInit {
     this.goNextPlayer();
   }
 
-  getNextPlayer() {
-    return (
-      (this.currentPlayer + 1) % (this.gameState.getValue().players.length - 1)
-    );
+  getNextPlayer(playerTurn: number, numberOfPlayers: number) {
+    return (playerTurn + 1) % numberOfPlayers;
   }
 
   openTemplate(): void {

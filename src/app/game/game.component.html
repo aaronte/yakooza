@@ -32,12 +32,12 @@
         >
           <div>
             Deck -
-            <span style="color: #a8a8a8"> {{ this.deck.length }} cards</span>
+            <span style="color: #a8a8a8"> {{ deck.length }} cards</span>
           </div>
           <div>
             Discard -
             <span style="color: #a8a8a8">
-              {{ this.gameState.getValue().discard.length }} cards
+              {{ gameState.getValue().discard.length }} cards
             </span>
           </div>
         </div>
@@ -56,7 +56,14 @@
               [ngStyle]="{ marginBottom: '16px' }"
             >
               <p [ngStyle]="{ marginBottom: '8px' }">
-                <b>Player {{ playerIndex + chunkIndex * 5 + 1 }}</b>
+                <span
+                  *ngIf="playerIndex === gameState.getValue().currentPlayer"
+                >
+                  👉
+                </span>
+                <b>
+                  {{ gameState.getValue().players[playerIndex] }}
+                </b>
               </p>
               <div
                 fxLayout="row"
@@ -179,7 +186,6 @@
         <div
           [ngStyle]="{
             maxHeight: '350px',
-            height: '100%',
             overflowY: 'hidden',
             border: '1px solid #D3D3D3',
             borderRadius: '4px',
@@ -187,11 +193,33 @@
           }"
           class="u-showScrollBar"
         >
+          <div [ngStyle]="{ marginBottom: '16px' }">
+            <nz-alert
+              nzType="info"
+              [nzMessage]="
+                gameState.getValue().players[
+                  gameState.getValue().currentPlayer
+                ] +
+                '\'s turn (' +
+                gameState.getValue().players[
+                  getNextPlayer(
+                    gameState.getValue().currentPlayer,
+                    gameState.getValue().players.length
+                  )
+                ] +
+                ' is next)'
+              "
+              nzShowIcon
+            ></nz-alert>
+          </div>
           <nz-timeline>
-            <nz-timeline-item nzColor="green">
-              <p [ngStyle]="{ marginBottom: '8px' }">
-                {{ gameState.getValue().players[currentPlayer] }}'s turn...
-              </p>
+            <nz-timeline-item
+              [nzColor]="
+                'draw' !== gameState.getValue().currentPlayerTurn.mode
+                  ? 'green'
+                  : 'gray'
+              "
+            >
               <p [ngStyle]="{ marginBottom: '8px' }">
                 First... discard card(s) below 👇
               </p>
@@ -236,7 +264,7 @@
                   [disabled]="
                     !isDiscardValid(
                       gameState.getValue().dropZone,
-                      playerCards.getValue()[currentPlayer]
+                      playerCards.getValue()[gameState.getValue().currentPlayer]
                     ) || gameState.getValue().isDropZoneConfirmed
                   "
                   (click)="lockDropZone()"
@@ -255,11 +283,14 @@
                 </button>
               </div>
             </nz-timeline-item>
-            <nz-timeline-item nzColor="gray">
+            <nz-timeline-item
+              [nzColor]="
+                'draw' === gameState.getValue().currentPlayerTurn.mode
+                  ? 'green'
+                  : 'gray'
+              "
+            >
               <p>Next... pick a card from the deck or the discard pile.</p>
-            </nz-timeline-item>
-            <nz-timeline-item nzColor="gray">
-              {{ gameState.getValue().players[getNextPlayer()] }} is next
             </nz-timeline-item>
           </nz-timeline>
         </div>
@@ -285,25 +316,34 @@
       <!--          >-->
       <!--        </nz-radio-group>-->
       <!--      </div>-->
-      <div [ngStyle]="{ marginBottom: '8px' }">
-        Your hand (Value:
-        {{ calculateHandValue(playerCards.getValue()[currentPlayer]) }})
-      </div>
       <div
         fxLayout="row"
         fxLayoutGap="8px"
         fxLayoutAlign="center center"
-        [ngStyle]="{ marginBottom: '16px', padding: '8px' }"
+        [ngStyle]="{
+          marginBottom: '16px',
+          padding: '8px',
+          minWidth: '248px',
+          height: '72px',
+          border: '1px solid #D3D3D3',
+          borderRadius: '4px'
+        }"
         cdkDropList
         #playerHandList="cdkDropList"
-        [cdkDropListData]="playerCards.getValue()[currentPlayer]"
+        [cdkDropListData]="
+          playerCards.getValue()[gameState.getValue().currentPlayer]
+        "
         [cdkDropListConnectedTo]="[dropZoneList, discardPickupList]"
         class="example-list"
         cdkDropListOrientation="horizontal"
         (cdkDropListDropped)="drop($event)"
       >
         <app-card
-          *ngFor="let card of playerCards.getValue()[currentPlayer]"
+          *ngFor="
+            let card of playerCards.getValue()[
+              gameState.getValue().currentPlayer
+            ]
+          "
           class="u-display-block"
           [card]="card"
           cdkDrag
@@ -311,14 +351,28 @@
         >
         </app-card>
       </div>
-      <div fxLayout="row" fxLayoutGap="8px">
+      <div
+        *ngIf="!!playerCards.getValue().length"
+        fxLayout="row"
+        fxLayoutGap="8px"
+        fxLayoutAlign="space-between center"
+      >
+        <p>
+          Your hand (Value:
+          {{
+            calculateHandValue(
+              playerCards.getValue()[gameState.getValue().currentPlayer]
+            )
+          }})
+        </p>
         <button
           nz-button
           nzType="default"
           [disabled]="
             winningThreshold <
-              calculateHandValue(playerCards.getValue()[currentPlayer]) ||
-            !!gameState.getValue().dropZone.length
+              calculateHandValue(
+                playerCards.getValue()[gameState.getValue().currentPlayer]
+              ) || !!gameState.getValue().dropZone.length
           "
           (click)="callGame(); startNewRound()"
         >

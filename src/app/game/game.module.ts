@@ -16,6 +16,7 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTypographyModule } from 'ng-zorro-antd/typography';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
 
 import { CardModule } from '../card/card.module';
 
@@ -29,6 +30,7 @@ import { GameComponent } from './game.component';
     DragDropModule,
     FlexLayoutModule,
     NzButtonModule,
+    NzAlertModule,
     NzIconModule.forChild([CheckCircleOutline, SyncOutline]),
     NzPageHeaderModule,
     NzRadioModule,
