@@ -10,6 +10,7 @@ import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzPageHeaderModule } from 'ng-zorro-antd/page-header';
 import { NzFormModule } from 'ng-zorro-antd/form';
+import { NzMessageModule } from 'ng-zorro-antd/message';
 
 @NgModule({
   declarations: [LobbyComponent],
@@ -24,6 +25,7 @@ import { NzFormModule } from 'ng-zorro-antd/form';
     NzInputModule,
     NzCardModule,
     NzFormModule,
+    NzMessageModule,
   ],
 })
 export class LobbyModule {}

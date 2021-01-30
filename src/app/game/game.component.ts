@@ -1,5 +1,5 @@
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, EMPTY } from 'rxjs';
 import {
   CdkDragDrop,
   moveItemInArray,
@@ -7,7 +7,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { NzDrawerRef, NzDrawerService } from 'ng-zorro-antd/drawer';
 import { ActivatedRoute } from '@angular/router';
-import { filter, map, skip, take, tap } from 'rxjs/operators';
+import { filter, map, tap } from 'rxjs/operators';
 
 import { DatabaseService } from '../service/database.service';
 
@@ -23,6 +23,7 @@ import sortBy from 'lodash-es/sortBy';
 import groupBy from 'lodash-es/groupBy';
 import uniqBy from 'lodash-es/uniqBy';
 import remove from 'lodash-es/remove';
+import { NzMessageService } from 'ng-zorro-antd/message';
 
 /*
  * TODO:
@@ -51,6 +52,7 @@ export class GameComponent implements OnInit {
     deck: [],
     discard: [],
     gameName: '',
+    hasStarted: false,
     players: [],
     rounds: [],
     log: [],
@@ -65,6 +67,7 @@ export class GameComponent implements OnInit {
     .getGameReference(this.route.snapshot.paramMap.get('gameId'))
     .valueChanges()
     .pipe(
+      filter((state) => !!state),
       map((game: any) => ({
         ...game,
         discard: Object.values(game.discard),
@@ -77,6 +80,7 @@ export class GameComponent implements OnInit {
   constructor(
     public databaseService: DatabaseService,
     public drawerService: NzDrawerService,
+    public message: NzMessageService,
     public route: ActivatedRoute,
   ) {}
 
@@ -84,24 +88,12 @@ export class GameComponent implements OnInit {
     this.gameState$
       .pipe(
         filter((state) => !!state),
-        take(1),
         tap((game: any) => {
           this.gameState.next(game);
           this.you = findIndex(
             this.gameState.getValue().players,
             (i) => i === this.route.snapshot.queryParamMap.get('name'),
           );
-          this.renewGame();
-        }),
-      )
-      .subscribe();
-    this.gameState$
-      .pipe(
-        filter((state) => !!state),
-        skip(1),
-        tap((game: any) => {
-          console.log({ game });
-          this.gameState.next(game);
         }),
       )
       .subscribe();
@@ -143,10 +135,7 @@ export class GameComponent implements OnInit {
   }
 
   updateGameState(update: any) {
-    if (!this.gameState.getValue().gameName) {
-      return;
-    }
-    this.databaseService.updateGameState(
+    return this.databaseService.updateGameState(
       this.gameState.getValue().gameName,
       {
         ...this.gameState.getValue(),
@@ -237,6 +226,10 @@ export class GameComponent implements OnInit {
   }
 
   drop(event: CdkDragDrop<Card[]>) {
+    if (this.you !== this.gameState.getValue().currentPlayer) {
+      return this.createMessage('error', `Please wait for your turn.`);
+    }
+
     if (event.previousContainer === event.container) {
       moveItemInArray(
         event.container.data,
@@ -302,7 +295,7 @@ export class GameComponent implements OnInit {
     return areSameCardId || isStraight;
   }
 
-  callGame() {
+  async callGame() {
     const scoreboard = this.gameState.getValue().scoreboard;
     const playerHandValues = this.gameState
       .getValue()
@@ -330,8 +323,9 @@ export class GameComponent implements OnInit {
             : total,
       };
     });
-    this.updateGameState({
+    await this.updateGameState({
       ...this.gameState.getValue(),
+      ...this.getResetCardDistributionUpdate(),
       scoreboard: newScoreboard,
     });
   }
@@ -356,25 +350,23 @@ export class GameComponent implements OnInit {
       .every((index) => 1 === index);
   }
 
-  goNextPlayer() {
-    this.updateGameState({
-      currentPlayer: this.getNextPlayer(
-        this.gameState.getValue().currentPlayer,
-        this.gameState.getValue().players.length,
-      ),
-    });
-  }
-
   isPhase(phase: string) {
     return () => {
       return phase === this.gameState.getValue().currentPlayerTurn.mode;
     };
   }
 
-  processNextTurn() {
+  async processNextTurn() {
     const currentValue = this.gameState.getValue();
-    this.updateGameState({
+    const goNextPlayerUpdate = {
+      currentPlayer: this.getNextPlayer(
+        this.gameState.getValue().currentPlayer,
+        this.gameState.getValue().players.length,
+      ),
+    };
+    await this.updateGameState({
       ...currentValue,
+      ...goNextPlayerUpdate,
       discard: [currentValue.dropZone, ...currentValue.discard],
       isDropZoneConfirmed: false,
       currentPlayerTurn: {
@@ -383,7 +375,6 @@ export class GameComponent implements OnInit {
       },
       dropZone: [],
     });
-    this.goNextPlayer();
   }
 
   getNextPlayer(playerTurn: number, numberOfPlayers: number) {
@@ -401,13 +392,14 @@ export class GameComponent implements OnInit {
     });
   }
 
-  startNewRound() {
-    this.resetCardDistribution();
-  }
-
-  renewGame() {
-    this.updateGameState({
+  async renewGame() {
+    console.log('Starting game...');
+    await this.resetCardDistribution();
+    await this.updateGameState({
       ...this.gameState.getValue(),
+      currentPlayer: 0,
+      currentRound: 0,
+      hasStarted: true,
       scoreboard: this.gameState.getValue().players.map(() => ({
         handValues: [],
         isLowestInRound: [],
@@ -415,10 +407,22 @@ export class GameComponent implements OnInit {
         total: 0,
       })),
     });
-    this.resetCardDistribution();
+  }
+
+  setGameAsNotStarted() {
+    return this.updateGameState({
+      ...this.gameState.getValue(),
+      hasStarted: false,
+    });
   }
 
   resetCardDistribution() {
+    return this.updateGameState({
+      ...this.getResetCardDistributionUpdate(),
+    });
+  }
+
+  getResetCardDistributionUpdate() {
     const initialDeck = this.calculateInitialDeck(
       this.gameState.getValue().players.length,
     );
@@ -427,12 +431,16 @@ export class GameComponent implements OnInit {
       this.gameState.getValue().players.length,
     );
     const { newDeck, drawnCard } = this.drawFromDeck(deck);
-    this.updateGameState({
+    return {
       ...this.gameState.getValue(),
       deck: newDeck,
       discard: [[drawnCard]],
       dropZone: [],
       playerCards: playerCards,
-    });
+    };
+  }
+
+  createMessage(type: string, message: string): void {
+    this.message.create(type, message);
   }
 }

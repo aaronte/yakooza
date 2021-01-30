@@ -17,6 +17,10 @@ import { NzDrawerModule } from 'ng-zorro-antd/drawer';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTypographyModule } from 'ng-zorro-antd/typography';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
+import { NzCardModule } from 'ng-zorro-antd/card';
+import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzMessageModule } from 'ng-zorro-antd/message';
+import { NzCollapseModule } from 'ng-zorro-antd/collapse';
 
 import { CardModule } from '../card/card.module';
 
@@ -31,14 +35,18 @@ import { GameComponent } from './game.component';
     FlexLayoutModule,
     NzButtonModule,
     NzAlertModule,
+    NzCardModule,
     NzIconModule.forChild([CheckCircleOutline, SyncOutline]),
     NzPageHeaderModule,
     NzRadioModule,
     FormsModule,
     NzDrawerModule,
+    NzMessageModule,
+    NzSpinModule,
     NzTableModule,
     NzTypographyModule,
     NzTimelineModule,
+    NzCollapseModule,
     RouterModule.forChild([
       {
         path: '',

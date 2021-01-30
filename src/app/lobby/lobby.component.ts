@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { tap } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 import { ActivatedRoute, Router } from '@angular/router';
+import { NzMessageService } from 'ng-zorro-antd/message';
 
 import { DatabaseService } from '../service/database.service';
+import { EMPTY } from 'rxjs';
 
 @Component({
   selector: 'app-lobby',
@@ -16,6 +18,7 @@ export class LobbyComponent implements OnInit {
     public databaseService: DatabaseService,
     public route: ActivatedRoute,
     public router: Router,
+    public message: NzMessageService,
   ) {}
 
   ngOnInit(): void {}
@@ -53,6 +56,10 @@ export class LobbyComponent implements OnInit {
             queryParamsHandling: 'merge',
           }),
         ),
+        catchError((error) => {
+          this.message.create('error', error);
+          return EMPTY;
+        }),
       )
       .subscribe();
   }

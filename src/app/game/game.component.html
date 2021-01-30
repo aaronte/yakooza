@@ -1,5 +1,66 @@
 <div
-  *ngIf="!!route.snapshot.queryParamMap.get('name')"
+  *ngIf="
+    !route.snapshot.queryParamMap.get('name') ||
+    !gameState.getValue().hasStarted
+  "
+  [ngStyle]="{
+    maxWidth: '960px',
+    margin: '0 auto',
+    width: '95vw',
+    minHeight: '100vh',
+    padding: '48px'
+  }"
+>
+  <nz-page-header>
+    <nz-page-header-title>Game room</nz-page-header-title>
+    <nz-page-header-subtitle
+      >id:
+      {{ route.snapshot.paramMap.get('gameId') }}
+      • name:
+      {{ route.snapshot.queryParamMap.get('name') }}
+    </nz-page-header-subtitle>
+  </nz-page-header>
+  <div [ngStyle]="{ padding: '0 24px' }">
+    <h5 nz-typography [ngStyle]="{ marginBottom: '24px' }">
+      <i nz-icon nzType="sync" nzSpin [ngStyle]="{ marginRight: '8px' }"></i>
+      Waiting for players...
+    </h5>
+    <div
+      fxLayout="row wrap"
+      fxLayoutGap="8px"
+      [ngStyle]="{ marginBottom: '24px' }"
+    >
+      <nz-card
+        *ngFor="let player of gameState.getValue().players"
+        [ngStyle]="{ marginBottom: '8px' }"
+        class="u-display-block"
+        nzSize="small"
+        fxFlex="24%"
+      >
+        <p>{{ player }}</p>
+      </nz-card>
+    </div>
+    <div>
+      <button
+        nz-button
+        nzSize="large"
+        nzType="primary"
+        [disabled]="
+          gameState.getValue().players[0] !==
+          route.snapshot.queryParamMap.get('name')
+        "
+        (click)="renewGame()"
+      >
+        Start game
+      </button>
+    </div>
+  </div>
+</div>
+<div
+  *ngIf="
+    !!route.snapshot.queryParamMap.get('name') &&
+    gameState.getValue().hasStarted
+  "
   [ngStyle]="{
     maxWidth: '960px',
     margin: '0 auto',
@@ -197,19 +258,13 @@
         >
           <div [ngStyle]="{ marginBottom: '16px' }">
             <nz-alert
-              nzType="info"
+              [nzType]="
+                gameState.getValue().currentPlayer !== you ? 'info' : 'success'
+              "
               [nzMessage]="
                 gameState.getValue().players[
                   gameState.getValue().currentPlayer
-                ] +
-                '\'s turn (' +
-                gameState.getValue().players[
-                  getNextPlayer(
-                    gameState.getValue().currentPlayer,
-                    gameState.getValue().players.length
-                  )
-                ] +
-                ' is next)'
+                ] + '\'s turn'
               "
               nzShowIcon
             ></nz-alert>
@@ -334,20 +389,14 @@
         }"
         cdkDropList
         #playerHandList="cdkDropList"
-        [cdkDropListData]="
-          gameState.getValue().playerCards[gameState.getValue().currentPlayer]
-        "
+        [cdkDropListData]="gameState.getValue().playerCards[you]"
         [cdkDropListConnectedTo]="[dropZoneList, discardPickupList]"
         class="example-list"
         cdkDropListOrientation="horizontal"
         (cdkDropListDropped)="drop($event)"
       >
         <app-card
-          *ngFor="
-            let card of gameState.getValue().playerCards[
-              gameState.getValue().currentPlayer
-            ]
-          "
+          *ngFor="let card of gameState.getValue().playerCards[you]"
           class="u-display-block"
           [card]="card"
           cdkDrag
@@ -363,26 +412,18 @@
       >
         <p>
           Your hand (Value:
-          {{
-            calculateHandValue(
-              gameState.getValue().playerCards[
-                gameState.getValue().currentPlayer
-              ]
-            )
-          }})
+          {{ calculateHandValue(gameState.getValue().playerCards[you]) }})
         </p>
         <button
           nz-button
           nzType="default"
           [disabled]="
             winningThreshold <
-              calculateHandValue(
-                gameState.getValue().playerCards[
-                  gameState.getValue().currentPlayer
-                ]
-              ) || !!gameState.getValue().dropZone.length
+              calculateHandValue(gameState.getValue().playerCards[you]) ||
+            !!gameState.getValue().dropZone.length ||
+            you !== gameState.getValue().currentPlayer
           "
-          (click)="callGame(); startNewRound()"
+          (click)="callGame()"
         >
           yaniv!
         </button>
@@ -436,11 +477,21 @@
     </tbody>
   </nz-table>
   <div [ngStyle]="{ padding: '16px 0' }">
-    <p [ngStyle]="{ paddingBottom: '8px' }">Did someone reach 100 yet?</p>
-    <button nz-button (click)="renewGame(); drawerRef.close()">
-      <i nz-icon nzType="sync"></i>
-      Reset game
-    </button>
+    <nz-collapse>
+      <nz-collapse-panel nzHeader="Advanced options">
+        <p [ngStyle]="{ paddingBottom: '8px' }">
+          Someone reach 100 yet? Wanna reset?
+        </p>
+        <button
+          nz-button
+          (click)="setGameAsNotStarted(); drawerRef.close()"
+          [disabled]="you !== gameState.getValue().currentPlayer"
+        >
+          <i nz-icon nzType="sync"></i>
+          Reset game
+        </button>
+      </nz-collapse-panel>
+    </nz-collapse>
   </div>
 </ng-template>
 <div

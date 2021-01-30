@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/firestore';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, throwError } from 'rxjs';
 import { concatMap, tap } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
@@ -9,14 +9,7 @@ export class DatabaseService {
   gameStates = new BehaviorSubject({});
 
   constructor(public firestore: AngularFirestore) {
-    this.firestore
-      .collection('games')
-      .valueChanges()
-      .pipe(
-        tap((games) => this.games.next(games)),
-        tap((games) => console.log({ games })),
-      )
-      .subscribe();
+    this.firestore.collection('games').valueChanges().subscribe(this.games);
   }
 
   createGame(gameId: string) {
@@ -58,6 +51,9 @@ export class DatabaseService {
       .pipe(
         concatMap((game) => {
           const gameSnapshot: any = game.data();
+          if (gameSnapshot.hasStarted) {
+            return throwError(`Sorry. Can't join a game that has started.`);
+          }
           return this.firestore
             .collection('games')
             .doc(gameId)
