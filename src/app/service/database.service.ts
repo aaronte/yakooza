@@ -26,7 +26,7 @@ export class DatabaseService {
         discard: [],
         players: [],
         rounds: [],
-        log: [],
+        logs: [],
         dropZone: [],
         currentPlayerTurn: { mode: 'discard' },
         scoreboard: [

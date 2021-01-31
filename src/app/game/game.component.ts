@@ -1,5 +1,5 @@
 import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
-import { BehaviorSubject, EMPTY } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import {
   CdkDragDrop,
   moveItemInArray,
@@ -8,10 +8,11 @@ import {
 import { NzDrawerRef, NzDrawerService } from 'ng-zorro-antd/drawer';
 import { ActivatedRoute } from '@angular/router';
 import { filter, map, pairwise, tap } from 'rxjs/operators';
+import { NzMessageService } from 'ng-zorro-antd/message';
 
 import { DatabaseService } from '../service/database.service';
 
-import { Card, cards, joker, numbers } from '../libs/cards';
+import { Card, cards, numbers } from '../libs/cards';
 import { permutations } from '../libs/permutations.libs';
 
 import chunk from 'lodash-es/chunk';
@@ -23,7 +24,6 @@ import sortBy from 'lodash-es/sortBy';
 import groupBy from 'lodash-es/groupBy';
 import uniqBy from 'lodash-es/uniqBy';
 import remove from 'lodash-es/remove';
-import { NzMessageService } from 'ng-zorro-antd/message';
 
 /*
  * TODO:
@@ -55,7 +55,7 @@ export class GameComponent implements OnInit {
     hasStarted: false,
     players: [],
     rounds: [],
-    log: [],
+    logs: [],
     dropZone: [],
     playerCards: [],
     isDropZoneConfirmed: false,
@@ -258,7 +258,10 @@ export class GameComponent implements OnInit {
         event.currentIndex,
       );
       if ('draw' === this.gameState.getValue().currentPlayerTurn.mode) {
-        this.processNextTurn();
+        this.processNextTurn({
+          card: event.container.data[event.currentIndex],
+          origin: event.previousContainer.element.nativeElement.id,
+        });
       }
     }
   }
@@ -365,7 +368,7 @@ export class GameComponent implements OnInit {
     };
   }
 
-  async processNextTurn() {
+  async processNextTurn(pickup: { origin: string; card: Card }) {
     const currentValue = this.gameState.getValue();
     const goNextPlayerUpdate = {
       currentPlayer: this.getNextPlayer(
@@ -390,12 +393,23 @@ export class GameComponent implements OnInit {
       isDropZoneConfirmed: false,
       currentPlayerTurn: { ...currentValue.currentPlayerTurn, mode: 'discard' },
       dropZone: [],
+      logs: [
+        {
+          pickup,
+          discard: currentValue.dropZone,
+        },
+        ...(currentValue.logs || []),
+      ],
       ...newDeckUpdate,
     });
   }
 
   getNextPlayer(playerTurn: number, numberOfPlayers: number) {
     return (playerTurn + 1) % numberOfPlayers;
+  }
+
+  getPreviousPlayerIndex(playerTurn: number, numberOfPlayers: number) {
+    return 0 === playerTurn ? numberOfPlayers - 1 : playerTurn - 1;
   }
 
   openTemplate(): void {
@@ -423,6 +437,7 @@ export class GameComponent implements OnInit {
       currentPlayer: 0,
       currentRound: 0,
       hasStarted: true,
+      logs: [],
       scoreboard: this.gameState.getValue().players.map(() => ({
         handValues: [],
         isLowestInRound: [],

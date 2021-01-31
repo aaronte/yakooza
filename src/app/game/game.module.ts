@@ -22,8 +22,10 @@ import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzMessageModule } from 'ng-zorro-antd/message';
 import { NzCollapseModule } from 'ng-zorro-antd/collapse';
+import { NzPopoverModule } from 'ng-zorro-antd/popover';
 
 import { CardModule } from '../card/card.module';
+import { CardLabelModule } from '../card-label/card-label.module';
 
 import { GameComponent } from './game.component';
 
@@ -32,6 +34,7 @@ import { GameComponent } from './game.component';
   imports: [
     CardModule,
     CommonModule,
+    CardLabelModule,
     DragDropModule,
     FlexLayoutModule,
     NzButtonModule,
@@ -48,6 +51,7 @@ import { GameComponent } from './game.component';
     NzTypographyModule,
     NzTimelineModule,
     NzCollapseModule,
+    NzPopoverModule,
     RouterModule.forChild([
       {
         path: '',

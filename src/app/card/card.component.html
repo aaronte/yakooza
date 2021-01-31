@@ -19,11 +19,11 @@
 <div
   *ngIf="'small' === size"
   [ngStyle]="{
-    height: '56px',
-    width: '40px',
-    padding: '4px',
+    height: '72px',
+    width: '56px',
+    padding: '6px',
     borderRadius: '4px',
-    fontSize: '10px',
+    fontSize: '12px',
     color: 'heart' === card.suit || 'diamond' === card.suit ? 'red' : 'black',
     backgroundColor: 'white',
     border: '1px solid #D3D3D3'
@@ -34,7 +34,6 @@
 >
   <ng-container [ngTemplateOutlet]="cardBody"></ng-container>
 </div>
-
 <ng-template #cardBody>
   <ng-container *ngIf="!hidden">
     <div fxLayout="row" fxLayoutAlign="start start">

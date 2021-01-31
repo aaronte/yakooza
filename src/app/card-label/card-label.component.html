@@ -1,0 +1,15 @@
+<div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="4px">
+  <p
+    *ngFor="let card of cards"
+    [ngStyle]="{
+      color: 'heart' === card.suit || 'diamond' === card.suit ? 'red' : 'black'
+    }"
+  >
+    <ng-container *ngIf="'heart' === card.suit"> ❤️ </ng-container>
+    <ng-container *ngIf="'diamond' === card.suit"> ♦️ </ng-container>
+    <ng-container *ngIf="'spade' === card.suit"> ♠️ </ng-container>
+    <ng-container *ngIf="'club' === card.suit"> ♣️ </ng-container>
+    <ng-container *ngIf="'' === card.suit"> 👑 </ng-container>
+    {{ card.cardName }}
+  </p>
+</div>

@@ -135,7 +135,7 @@
               <div
                 fxLayout="row"
                 fxLayoutAlign="start center"
-                fxLayoutGap="-32px"
+                fxLayoutGap="-48px"
               >
                 <app-card
                   *ngFor="let card of cards"
@@ -172,20 +172,21 @@
               <p [ngStyle]="{ marginBottom: '4px' }">Deck</p>
               <div
                 [ngStyle]="{
-                  padding: '16px',
+                  padding: '16px 8px',
                   border: '1px solid #D3D3D3',
-                  minHeight: '90px',
+                  minHeight: '106px',
                   borderRadius: '4px'
                 }"
                 cdkDropList
                 #dropZoneList="cdkDropList"
+                id="deck"
                 [cdkDropListData]="gameState.getValue().deck"
                 [cdkDropListConnectedTo]="[playerHandList]"
                 class="example-list"
                 cdkDropListOrientation="horizontal"
                 (cdkDropListDropped)="drop($event)"
                 fxLayout="row"
-                fxLayoutGap="-100px"
+                fxLayoutGap="-200px"
                 [cdkDropListEnterPredicate]="isPhase('')"
               >
                 <app-card
@@ -209,7 +210,7 @@
                 [ngStyle]="{
                   padding: '16px',
                   border: '1px solid #D3D3D3',
-                  minHeight: '90px',
+                  minHeight: '106px',
                   borderRadius: '4px'
                 }"
                 cdkDropList
@@ -222,6 +223,7 @@
                 fxLayout="row"
                 fxLayoutGap="8px"
                 [cdkDropListEnterPredicate]="isPhase('')"
+                id="discard"
               >
                 <app-card
                   *ngFor="
@@ -260,15 +262,51 @@
           }"
           class="u-showScrollBar"
         >
+          <div
+            *ngIf="!!gameState.getValue().logs?.length"
+            [ngStyle]="{ marginBottom: '8px', color: '#717171' }"
+            fxLayout="row"
+            fxLayoutAlign="start center"
+            fxLayoutGap="4px"
+          >
+            <span
+              >Previous:
+              {{
+                gameState.getValue().players[
+                  getPreviousPlayerIndex(
+                    gameState.getValue().currentPlayer,
+                    gameState.getValue().players.length
+                  )
+                ]
+              }}
+              dropped</span
+            >
+            <app-card-label
+              class="u-display-block"
+              [cards]="gameState.getValue().logs[0].discard"
+            ></app-card-label>
+            <span>, Picked up </span>
+            <app-card-label
+              *ngIf="'deck' !== gameState.getValue().logs[0].pickup.origin"
+              class="u-display-block"
+              [cards]="[gameState.getValue().logs[0].pickup.card]"
+            ></app-card-label
+            ><span>from</span
+            ><span [ngStyle]="{ textDecoration: 'underline' }">
+              {{ gameState.getValue().logs[0].pickup.origin }}</span
+            >.
+          </div>
           <div [ngStyle]="{ marginBottom: '16px' }">
             <nz-alert
               [nzType]="
                 gameState.getValue().currentPlayer !== you ? 'info' : 'success'
               "
               [nzMessage]="
+                'NOW: ' +
                 gameState.getValue().players[
                   gameState.getValue().currentPlayer
-                ] + '\'s turn'
+                ] +
+                '\'s turn'
               "
               nzShowIcon
             ></nz-alert>
@@ -306,10 +344,11 @@
                   marginBottom: '16px',
                   padding: '16px',
                   border: '1px solid #D3D3D3',
-                  minHeight: '90px'
+                  minHeight: '106px'
                 }"
                 cdkDropList
                 #dropZoneList="cdkDropList"
+                id="dropzone"
                 [cdkDropListData]="gameState.getValue().dropZone"
                 [cdkDropListConnectedTo]="[playerHandList]"
                 class="example-list color-bg-green--onHover"
@@ -426,10 +465,11 @@
         [ngStyle]="{
           marginBottom: '16px',
           padding: '8px',
-          minWidth: '248px',
-          height: '72px',
+          minWidth: '350px',
+          height: '100px',
           border: '1px solid #D3D3D3',
-          borderRadius: '4px'
+          borderRadius: '4px',
+          width: '100%'
         }"
         cdkDropList
         #playerHandList="cdkDropList"
@@ -440,8 +480,8 @@
         (cdkDropListDropped)="drop($event)"
       >
         <app-card
+          fxFlex="0 0 56px"
           *ngFor="let card of gameState.getValue().playerCards[you]"
-          class="u-display-block"
           [card]="card"
           cdkDrag
           size="small"
@@ -511,12 +551,9 @@
               : '#C1F7DC'
           }"
         >
-          <span *ngIf="!tableData.scoreboard.isLowestInRound[roundIndex]">
+          <span>
             {{ tableData.scoreboard.handValues[roundIndex] }}
           </span>
-          <s *ngIf="tableData.scoreboard.isLowestInRound[roundIndex]">
-            {{ tableData.scoreboard.handValues[roundIndex] }}
-          </s>
         </td>
         <td>
           {{ tableData.scoreboard.total }}
