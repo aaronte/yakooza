@@ -31,13 +31,17 @@
       [ngStyle]="{ marginBottom: '24px' }"
     >
       <nz-card
-        *ngFor="let player of gameState.getValue().players"
+        *ngFor="
+          let player of gameState.getValue().players;
+          let playerIndex = index
+        "
         [ngStyle]="{ marginBottom: '8px' }"
         class="u-display-block"
         nzSize="small"
         fxFlex="24%"
       >
-        <p>{{ player }}</p>
+        <p nz-typography [nzDisabled]="true">Player {{ playerIndex + 1 }}</p>
+        <h5 nz-typography [ngStyle]="{ marginTop: 0 }">{{ player }}</h5>
       </nz-card>
     </div>
     <div>
@@ -474,7 +478,7 @@
 <ng-template #scoreDrawerTemplate let-data let-drawerRef="drawerRef">
   <nz-table
     #basicTable
-    [nzData]="data?.gameState?.scoreboard"
+    [nzData]="data?.scoreboard"
     [nzShowPagination]="false"
     nzSize="small"
   >
@@ -483,35 +487,39 @@
         <th>Player</th>
         <th
           *ngFor="
-            let round of basicTable.data[0]?.scores;
+            let round of basicTable.data[0]?.scoreboard.scores;
             let roundIndex = index
           "
         >
           Round {{ roundIndex + 1 }}
         </th>
-        <th>Total</th>
+        <th [nzSortFn]="sortBy" nzSortOrder="descend">Total</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let tableData of basicTable?.data; let playerIndex = index">
-        <td>{{ data.gameState?.players[playerIndex] }}</td>
+        <td>{{ tableData.name }}</td>
+
         <td
           *ngFor="
-            let score of basicTable?.data[playerIndex].scores;
+            let score of tableData.scoreboard.scores;
             let roundIndex = index
           "
+          [ngStyle]="{
+            backgroundColor: !tableData.scoreboard.isLowestInRound[roundIndex]
+              ? '#f0f0f0'
+              : '#C1F7DC'
+          }"
         >
-          <span
-            *ngIf="!basicTable?.data[playerIndex]?.isLowestInRound[roundIndex]"
-          >
-            {{ basicTable?.data[playerIndex]?.handValues[roundIndex] }}
+          <span *ngIf="!tableData.scoreboard.isLowestInRound[roundIndex]">
+            {{ tableData.scoreboard.handValues[roundIndex] }}
           </span>
-          <s *ngIf="basicTable?.data[playerIndex]?.isLowestInRound[roundIndex]">
-            {{ basicTable?.data[playerIndex]?.handValues[roundIndex] }}
+          <s *ngIf="tableData.scoreboard.isLowestInRound[roundIndex]">
+            {{ tableData.scoreboard.handValues[roundIndex] }}
           </s>
         </td>
         <td>
-          {{ basicTable?.data[playerIndex].total }}
+          {{ tableData.scoreboard.total }}
         </td>
       </tr>
     </tbody>
@@ -525,7 +533,7 @@
         <button
           nz-button
           (click)="setGameAsNotStarted(); drawerRef.close()"
-          [disabled]="you !== gameState.getValue().currentPlayer"
+          [disabled]="you !== 0"
         >
           <i nz-icon nzType="sync"></i>
           Reset game

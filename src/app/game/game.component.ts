@@ -244,7 +244,6 @@ export class GameComponent implements OnInit {
     if (this.you !== this.gameState.getValue().currentPlayer) {
       return this.createMessage('error', `Please wait for your turn.`);
     }
-
     if (event.previousContainer === event.container) {
       moveItemInArray(
         event.container.data,
@@ -305,9 +304,14 @@ export class GameComponent implements OnInit {
       .getValue()
       .playerCards.map((hand) => this.calculateHandValue(hand));
     const newScoreboard = scoreboard.map((scoreboardItem, index) => {
+      const roundMinimum = Math.min(...playerHandValues);
       const currentHandValue = playerHandValues[index];
-      const newScores = [...scoreboardItem.scores, currentHandValue];
-      const intermediateTotal = scoreboardItem.total + currentHandValue;
+      const isRealWinner =
+        this.you === index && roundMinimum === currentHandValue;
+      const penalty = this.you !== index ? 0 : !isRealWinner ? 30 : 0;
+      const realScore = currentHandValue + penalty;
+      const newScores = [...scoreboardItem.scores, realScore];
+      const intermediateTotal = scoreboardItem.total + realScore;
       const total =
         50 === intermediateTotal
           ? 25
@@ -319,17 +323,18 @@ export class GameComponent implements OnInit {
         scores: newScores,
         isLowestInRound: [
           ...scoreboardItem.isLowestInRound,
-          Math.min(...playerHandValues) === currentHandValue,
+          roundMinimum === realScore,
         ],
-        total:
-          Math.min(...playerHandValues) === currentHandValue
-            ? scoreboardItem.total
-            : total,
+        total: roundMinimum === realScore ? scoreboardItem.total : total,
       };
     });
     await this.updateGameState({
       ...this.gameState.getValue(),
       ...this.getResetCardDistributionUpdate(),
+      currentPlayer: this.getNextPlayer(
+        this.gameState.getValue().currentPlayer,
+        this.gameState.getValue().players.length,
+      ),
       scoreboard: newScoreboard,
     });
   }
@@ -383,10 +388,7 @@ export class GameComponent implements OnInit {
       ...goNextPlayerUpdate,
       discard: [currentValue.dropZone, ...currentValue.discard],
       isDropZoneConfirmed: false,
-      currentPlayerTurn: {
-        ...currentValue.currentPlayerTurn,
-        mode: 'discard',
-      },
+      currentPlayerTurn: { ...currentValue.currentPlayerTurn, mode: 'discard' },
       dropZone: [],
       ...newDeckUpdate,
     });
@@ -397,12 +399,18 @@ export class GameComponent implements OnInit {
   }
 
   openTemplate(): void {
+    const transformedScoreboard = this.gameState
+      .getValue()
+      .players.map((playerName, index) => ({
+        name: playerName,
+        scoreboard: this.gameState.getValue().scoreboard[index],
+      }));
     const drawerRef = this.drawerService.create({
       nzTitle: 'Scoreboard',
       nzContent: this.scoreDrawerTemplate,
-      nzWidth: '600px',
+      nzWidth: '700px',
       nzContentParams: {
-        gameState: this.gameState.getValue(),
+        scoreboard: transformedScoreboard,
       },
     });
   }
@@ -458,5 +466,12 @@ export class GameComponent implements OnInit {
 
   createMessage(type: string, message: string): void {
     this.message.create(type, message);
+  }
+
+  sortBy(
+    item1: { scoreboard: { total: number } },
+    item2: { scoreboard: { total: number } },
+  ) {
+    return item1.scoreboard.total - item2.scoreboard.total;
   }
 }

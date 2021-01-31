@@ -33,6 +33,7 @@ export class DatabaseService {
           { handValues: [], scores: [], isLowestInRound: [], total: 0 },
         ],
         recognizeGameCalled: [],
+        playerCards: [],
       });
   }
 
