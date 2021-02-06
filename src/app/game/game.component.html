@@ -112,7 +112,8 @@
           <div
             *ngFor="
               let cardChunk of playerCardChunks.getValue();
-              let chunkIndex = index
+              let chunkIndex = index;
+              trackBy: trackIndexByFn
             "
           >
             <div
@@ -143,7 +144,7 @@
                 fxLayoutGap="-48px"
               >
                 <app-card
-                  *ngFor="let card of cards"
+                  *ngFor="let card of cards; trackBy: trackCardByFn"
                   [card]="card"
                   size="small"
                   [hidden]="true"
@@ -197,7 +198,8 @@
                 <app-card
                   *ngFor="
                     let card of gameState.getValue().deck;
-                    let cardIndex = index
+                    let cardIndex = index;
+                    trackBy: trackCardByFn
                   "
                   class="u-display-block"
                   [card]="card"
@@ -207,6 +209,17 @@
                   cdkDrag
                   [cdkDragDisabled]="
                     'draw' !== gameState.getValue().currentPlayerTurn.mode
+                  "
+                  (dblclick)="
+                    pickUpFromPile(
+                      {
+                        previousContainer: deck,
+                        container: playerHandList,
+                        previousIndex: cardIndex,
+                        currentIndex: playerHandList.data.length
+                      },
+                      'draw' !== gameState.getValue().currentPlayerTurn.mode
+                    )
                   "
                 >
                 </app-card>
@@ -236,7 +249,8 @@
                 <app-card
                   *ngFor="
                     let card of gameState.getValue().discard[0] as discardPile;
-                    let cardIndex = index
+                    let cardIndex = index;
+                    trackBy: trackCardByFn
                   "
                   class="u-display-block"
                   [card]="card"
@@ -253,6 +267,19 @@
                     (0 !== cardIndex &&
                       discardPile?.length - 1 !== cardIndex) ||
                     'draw' !== gameState.getValue().currentPlayerTurn.mode
+                  "
+                  (dblclick)="
+                    pickUpFromPile(
+                      {
+                        previousContainer: discardPickupList,
+                        container: playerHandList,
+                        previousIndex: cardIndex,
+                        currentIndex: playerHandList.data.length
+                      },
+                      (0 !== cardIndex &&
+                        discardPile?.length - 1 !== cardIndex) ||
+                        'draw' !== gameState.getValue().currentPlayerTurn.mode
+                    )
                   "
                 >
                 </app-card>
@@ -372,13 +399,22 @@
                 <app-card
                   *ngFor="
                     let card of gameState.getValue().dropZone;
-                    let cardIndex = index
+                    let cardIndex = index;
+                    trackBy: trackCardByFn
                   "
                   class="u-display-block"
                   [card]="card"
                   size="small"
                   cdkDrag
                   [cdkDragDisabled]="gameState.getValue().isDropZoneConfirmed"
+                  (dblclick)="
+                    validateDrop({
+                      previousContainer: dropZoneList,
+                      container: playerHandList,
+                      previousIndex: cardIndex,
+                      currentIndex: playerHandList.data.length
+                    })
+                  "
                 >
                 </app-card>
               </div>
@@ -461,19 +497,6 @@
     fxLayoutAlign="center center"
   >
     <div>
-      <!--      <div [ngStyle]="{ marginBottom: '8px' }">-->
-      <!--        <nz-radio-group [(ngModel)]="currentPlayer" nzSize="small">-->
-      <!--          <label-->
-      <!--            *ngFor="-->
-      <!--              let player of playerCards.getValue();-->
-      <!--              let playerIndex = index-->
-      <!--            "-->
-      <!--            nz-radio-button-->
-      <!--            [nzValue]="playerIndex"-->
-      <!--            >Player {{ playerIndex + 1 }}</label-->
-      <!--          >-->
-      <!--        </nz-radio-group>-->
-      <!--      </div>-->
       <div
         fxLayout="row"
         fxLayoutGap="8px"
@@ -499,12 +522,21 @@
           fxFlex="0 0 56px"
           *ngFor="
             let card of gameState.getValue().playerCards[you];
-            let cardIndex = index
+            let cardIndex = index;
+            trackBy: trackCardByFn
           "
           [card]="card"
           cdkDrag
           size="small"
           [hidden]="!!route.snapshot.queryParamMap.get('hideCards')"
+          (dblclick)="
+            validateDrop({
+              previousContainer: playerHandList,
+              container: dropZoneList,
+              previousIndex: cardIndex,
+              currentIndex: dropZoneList.data.length
+            })
+          "
         >
         </app-card>
       </div>

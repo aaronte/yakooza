@@ -38,6 +38,9 @@ import remove from 'lodash-es/remove';
  * - [x] Keeping scores
  * - [x] Reset rounds
  * - [x] Add player names
+ * - [x] Double click cards
+ * - [] Sound for turn
+ * - [] Reorder own cards
  * - [] Use jokers for straights
  * */
 @Component({
@@ -250,7 +253,7 @@ export class GameComponent implements OnInit {
     );
   }
 
-  drop(event: CdkDragDrop<Card[]>) {
+  drop(event: CdkDragDrop<Card[]> | any) {
     if (this.you !== this.gameState.getValue().currentPlayer) {
       return this.createMessage('error', `Please wait for your turn.`);
     }
@@ -509,5 +512,27 @@ export class GameComponent implements OnInit {
     item2: { scoreboard: { total: number } },
   ) {
     return item1.scoreboard.total - item2.scoreboard.total;
+  }
+
+  validateDrop(event: CdkDragDrop<Card[]> | any) {
+    if (this.you !== this.gameState.getValue().currentPlayer) {
+      return this.createMessage('error', `Please wait for your turn.`);
+    }
+    this.drop(event);
+  }
+
+  pickUpFromPile(event: CdkDragDrop<Card[]> | any, isDisabled = true) {
+    if (isDisabled) {
+      return;
+    }
+    this.validateDrop(event);
+  }
+
+  trackCardByFn(index: number, card: Card) {
+    return card.id;
+  }
+
+  trackIndexByFn(index: number) {
+    return index;
   }
 }
