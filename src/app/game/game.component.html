@@ -269,6 +269,11 @@
             padding: '24px 16px 0'
           }"
           class="u-showScrollBar"
+          [ngClass]="{
+            'background-blink':
+              you === gameState.getValue().currentPlayer &&
+              gameState.getValue().hasStarted
+          }"
         >
           <div
             *ngIf="!!gameState.getValue().logs?.length"

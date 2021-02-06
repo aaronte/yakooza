@@ -156,3 +156,21 @@ body {
   background-color: rgba(0, 0, 0, 0.4);
   -webkit-box-shadow: 0 0 1px rgba(0, 0, 0, 0.4);
 }
+
+.background-blink {
+  animation: background-blink 2s infinite;
+  transition: background-color 500ms;
+  background-color: #fff;
+}
+
+@keyframes background-blink {
+  0% {
+    background-color: #fff;
+  }
+  50% {
+    background-color: #d9f7be;
+  }
+  100% {
+    background-color: #fff;
+  }
+}
