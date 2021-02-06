@@ -19,13 +19,15 @@ import { DOCUMENT } from '@angular/common';
 
 import { DatabaseService } from '../service/database.service';
 
-import { Card, cards, numbers } from '../libs/cards';
+import { Card, cards, joker, numbers } from '../libs/cards';
 import { permutations } from '../libs/permutations.libs';
+import { jokerCombinations } from '../libs/joker-combinations';
 
 import chunk from 'lodash-es/chunk';
 import times from 'lodash-es/times';
 import findIndex from 'lodash-es/findIndex';
 import flatten from 'lodash-es/flatten';
+import includes from 'lodash-es/includes';
 import isEqual from 'lodash-es/isEqual';
 import shuffle from 'lodash-es/shuffle';
 import set from 'lodash-es/set';
@@ -36,6 +38,7 @@ import remove from 'lodash-es/remove';
 
 const audio = new Audio();
 audio.src = '../../../assets/audio/insight-578.mp3';
+audio.volume = 0.3;
 
 /*
  * TODO:
@@ -45,7 +48,7 @@ audio.src = '../../../assets/audio/insight-578.mp3';
  * - [x] Add player names
  * - [x] Double click cards
  * - [x] Sound for turn
- * - [] Reorder own cards
+ * - [x] Reorder own cards
  * - [] Use jokers for straights
  * */
 @Component({
@@ -338,10 +341,15 @@ export class GameComponent implements OnInit {
             .sort()
             .join('-'),
       );
+    const cardsToDiscardWithoutJoker = cardsToDiscard.filter(
+      ({ id }) => id !== joker.id,
+    );
     const areSameSuit =
-      1 === Object.keys(groupBy(cardsToDiscard, (card) => card.suit)).length;
+      1 ===
+      Object.keys(groupBy(cardsToDiscardWithoutJoker, (card) => card.suit))
+        .length;
     const areAllDifferentCards = Object.values(
-      cardsToDiscard.reduce((result, current) => {
+      cardsToDiscardWithoutJoker.reduce((result, current) => {
         const currentSum = result[current.id] || 0;
         return {
           ...result,
@@ -400,23 +408,32 @@ export class GameComponent implements OnInit {
   }
 
   isStraight(hand: Card[]) {
-    /*need to handle jokers*/
-    return hand
-      .map((card, handIndex) => {
-        if (hand.length - 1 === handIndex) {
-          return 1;
-        }
-        const currentPositionIndex = findIndex(
-          numbers,
-          ({ id }) => id === card.cardName,
-        );
-        const nextPositionIndex = findIndex(
-          numbers,
-          ({ id }) => id === hand[handIndex + 1].cardName,
-        );
-        return Math.abs(currentPositionIndex - nextPositionIndex);
-      })
-      .every((index) => 1 === index);
+    const hasJoker = hand.some((card) => card.id === joker.id);
+    if (!hasJoker) {
+      return hand
+        .map((card, handIndex) => {
+          if (hand.length - 1 === handIndex) {
+            return 1;
+          }
+          const currentPositionIndex = findIndex(
+            numbers,
+            ({ id }) => id === card.cardName,
+          );
+          const nextPositionIndex = findIndex(
+            numbers,
+            ({ id }) => id === hand[handIndex + 1].cardName,
+          );
+          return Math.abs(currentPositionIndex - nextPositionIndex);
+        })
+        .every((index) => 1 === index);
+    }
+    const handIdString = hand.map(({ cardName }) => cardName).join('***');
+    const combinations = jokerCombinations.map((combo) => combo.join('***'));
+    return combinations.some(
+      (combo) =>
+        includes(combo, handIdString) ||
+        includes(combo.split('***').reverse().join('***'), handIdString),
+    );
   }
 
   isPhase(phase: string) {

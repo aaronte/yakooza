@@ -30,8 +30,8 @@ export const cards: {
   value: number;
   suit: string;
 }[] = [
-  // joker,
-  // joker,
+  joker,
+  joker,
   ...flatten(
     suits.map((suit) => {
       return numbers.map((value, key) => ({
