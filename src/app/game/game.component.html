@@ -124,12 +124,17 @@
             >
               <p [ngStyle]="{ marginBottom: '8px' }">
                 <span
-                  *ngIf="playerIndex === gameState.getValue().currentPlayer"
+                  *ngIf="
+                    playerIndex + chunkIndex * 5 ===
+                    gameState.getValue().currentPlayer
+                  "
                 >
                   👉
                 </span>
                 <b>
-                  {{ gameState.getValue().players[playerIndex] }}
+                  {{
+                    gameState.getValue().players[playerIndex + chunkIndex * 5]
+                  }}
                 </b>
               </p>
               <div
