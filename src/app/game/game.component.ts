@@ -303,11 +303,20 @@ export class GameComponent implements OnInit {
       );
     const areSameSuit =
       1 === Object.keys(groupBy(cardsToDiscard, (card) => card.suit)).length;
+    const areAllDifferentCards = Object.values(
+      cardsToDiscard.reduce((result, current) => {
+        const currentSum = result[current.id] || 0;
+        return {
+          ...result,
+          [current.id]: currentSum + 1,
+        };
+      }, {}),
+    ).every((value) => 1 === value);
     const isStraight =
       cardsToDiscard.length > 2 &&
       areSameSuit &&
-      this.isStraight(cardsToDiscard);
-
+      this.isStraight(cardsToDiscard) &&
+      areAllDifferentCards;
     return areSameCardId || isStraight;
   }
 
