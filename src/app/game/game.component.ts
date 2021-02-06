@@ -1,4 +1,10 @@
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import {
+  Component,
+  Inject,
+  OnInit,
+  TemplateRef,
+  ViewChild,
+} from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import {
   CdkDragDrop,
@@ -9,6 +15,7 @@ import { NzDrawerRef, NzDrawerService } from 'ng-zorro-antd/drawer';
 import { ActivatedRoute } from '@angular/router';
 import { filter, map, pairwise, tap } from 'rxjs/operators';
 import { NzMessageService } from 'ng-zorro-antd/message';
+import { DOCUMENT } from '@angular/common';
 
 import { DatabaseService } from '../service/database.service';
 
@@ -61,7 +68,7 @@ export class GameComponent implements OnInit {
     isDropZoneConfirmed: false,
     currentPlayerTurn: { mode: 'discard' },
     scoreboard: [{ handValues: [], scores: [], isLowestInRound: [], total: 0 }],
-    recognizeGameCalled: [],
+    calledGame: [],
   });
   gameState$ = new BehaviorSubject(null);
   _gameState$ = this.databaseService
@@ -79,6 +86,7 @@ export class GameComponent implements OnInit {
   you: number;
 
   constructor(
+    @Inject(DOCUMENT) public document: Document,
     public databaseService: DatabaseService,
     public drawerService: NzDrawerService,
     public message: NzMessageService,

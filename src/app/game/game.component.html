@@ -195,7 +195,10 @@
                 [cdkDropListEnterPredicate]="isPhase('')"
               >
                 <app-card
-                  *ngFor="let card of gameState.getValue().deck"
+                  *ngFor="
+                    let card of gameState.getValue().deck;
+                    let cardIndex = index
+                  "
                   class="u-display-block"
                   [card]="card"
                   [hidden]="true"
@@ -362,7 +365,10 @@
                 [cdkDropListEnterPredicate]="isPhase('discard')"
               >
                 <app-card
-                  *ngFor="let card of gameState.getValue().dropZone"
+                  *ngFor="
+                    let card of gameState.getValue().dropZone;
+                    let cardIndex = index
+                  "
                   class="u-display-block"
                   [card]="card"
                   size="small"
@@ -486,15 +492,22 @@
       >
         <app-card
           fxFlex="0 0 56px"
-          *ngFor="let card of gameState.getValue().playerCards[you]"
+          *ngFor="
+            let card of gameState.getValue().playerCards[you];
+            let cardIndex = index
+          "
           [card]="card"
           cdkDrag
           size="small"
+          [hidden]="!!route.snapshot.queryParamMap.get('hideCards')"
         >
         </app-card>
       </div>
       <div
-        *ngIf="!!gameState.getValue().playerCards.length"
+        *ngIf="
+          !!gameState.getValue().playerCards.length &&
+          !route.snapshot.queryParamMap.get('hideCards')
+        "
         fxLayout="row"
         fxLayoutGap="8px"
         fxLayoutAlign="space-between center"
@@ -565,6 +578,20 @@
         >
           <span>
             {{ tableData.scoreboard.handValues[roundIndex] }}
+            <span
+              *ngIf="
+                0 !==
+                tableData.scoreboard.scores[roundIndex] -
+                  tableData.scoreboard.handValues[roundIndex]
+              "
+            >
+              (<span [ngStyle]="{ color: '#ff7875' }"
+                >+{{
+                  tableData.scoreboard.scores[roundIndex] -
+                    tableData.scoreboard.handValues[roundIndex]
+                }}</span
+              >)
+            </span>
           </span>
         </td>
         <td>
