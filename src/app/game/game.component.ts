@@ -107,7 +107,9 @@ export class GameComponent implements OnInit {
             oldGameState.scoreboard[0].scores.length <
             newGameState.scoreboard[0].scores.length
           ) {
-            this.openTemplate();
+            this.openTemplate(
+              newGameState.calledGame[newGameState.calledGame.length - 1],
+            );
           }
         }),
       )
@@ -334,11 +336,12 @@ export class GameComponent implements OnInit {
     await this.updateGameState({
       ...this.gameState.getValue(),
       ...this.getResetCardDistributionUpdate(),
-      currentPlayer: this.getNextPlayer(
-        this.gameState.getValue().currentPlayer,
-        this.gameState.getValue().players.length,
-      ),
+      currentPlayer: this.gameState.getValue().currentPlayer,
       scoreboard: newScoreboard,
+      calledGame: [
+        ...this.gameState.getValue().calledGame,
+        this.gameState.getValue().players[this.you],
+      ],
     });
   }
 
@@ -412,7 +415,7 @@ export class GameComponent implements OnInit {
     return 0 === playerTurn ? numberOfPlayers - 1 : playerTurn - 1;
   }
 
-  openTemplate(): void {
+  openTemplate(calledGame: string = ''): void {
     const transformedScoreboard = this.gameState
       .getValue()
       .players.map((playerName, index) => ({
@@ -425,6 +428,7 @@ export class GameComponent implements OnInit {
       nzWidth: '700px',
       nzContentParams: {
         scoreboard: transformedScoreboard,
+        calledGame: calledGame,
       },
     });
   }
@@ -434,6 +438,7 @@ export class GameComponent implements OnInit {
     await this.resetCardDistribution();
     await this.updateGameState({
       ...this.gameState.getValue(),
+      calledGame: [],
       currentPlayer: 0,
       currentRound: 0,
       hasStarted: true,
@@ -444,7 +449,6 @@ export class GameComponent implements OnInit {
         scores: [],
         total: 0,
       })),
-      recognizeGameCalled: this.gameState.getValue().players.map(() => false),
     });
   }
 

@@ -521,6 +521,13 @@
   </div>
 </div>
 <ng-template #scoreDrawerTemplate let-data let-drawerRef="drawerRef">
+  <nz-alert
+    *ngIf="data?.calledGame"
+    nzType="info"
+    [nzMessage]="data.calledGame + ' called yaniv!'"
+    nzShowIcon
+    [ngStyle]="{ marginBottom: '16px' }"
+  ></nz-alert>
   <nz-table
     #basicTable
     [nzData]="data?.scoreboard"
