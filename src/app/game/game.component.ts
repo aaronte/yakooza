@@ -32,6 +32,9 @@ import groupBy from 'lodash-es/groupBy';
 import uniqBy from 'lodash-es/uniqBy';
 import remove from 'lodash-es/remove';
 
+const audio = new Audio();
+audio.src = '../../../assets/audio/insight-578.mp3';
+
 /*
  * TODO:
  * - [x] Calling Yaniv
@@ -39,7 +42,7 @@ import remove from 'lodash-es/remove';
  * - [x] Reset rounds
  * - [x] Add player names
  * - [x] Double click cards
- * - [] Sound for turn
+ * - [x] Sound for turn
  * - [] Reorder own cards
  * - [] Use jokers for straights
  * */
@@ -121,6 +124,13 @@ export class GameComponent implements OnInit {
             this.openTemplate(
               newGameState.calledGame[newGameState.calledGame.length - 1],
             );
+          }
+
+          if (
+            oldGameState.currentPlayer !== this.you &&
+            newGameState.currentPlayer === this.you
+          ) {
+            this.playTurnAudio();
           }
         }),
       )
@@ -534,5 +544,14 @@ export class GameComponent implements OnInit {
 
   trackIndexByFn(index: number) {
     return index;
+  }
+
+  playTurnAudio() {
+    try {
+      audio.load();
+      audio.play();
+    } catch (error) {
+      console.error(`Can't play audio.`);
+    }
   }
 }

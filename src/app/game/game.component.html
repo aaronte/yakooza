@@ -172,6 +172,12 @@
             padding: '16px',
             marginBottom: '16px'
           }"
+          [ngClass]="{
+            'background-blink':
+              you === gameState.getValue().currentPlayer &&
+              gameState.getValue().hasStarted &&
+              'draw' === gameState.getValue().currentPlayerTurn.mode
+          }"
         >
           <div fxLayout="row" fxLayoutAlign="start center" fxLayoutGap="8px">
             <div fxFlex="76px">
@@ -299,7 +305,8 @@
           [ngClass]="{
             'background-blink':
               you === gameState.getValue().currentPlayer &&
-              gameState.getValue().hasStarted
+              gameState.getValue().hasStarted &&
+              'discard' === gameState.getValue().currentPlayerTurn.mode
           }"
         >
           <div
