@@ -415,12 +415,15 @@
                   cdkDrag
                   [cdkDragDisabled]="gameState.getValue().isDropZoneConfirmed"
                   (dblclick)="
-                    validateDrop({
-                      previousContainer: dropZoneList,
-                      container: playerHandList,
-                      previousIndex: cardIndex,
-                      currentIndex: playerHandList.data.length
-                    })
+                    pickUpFromPile(
+                      {
+                        previousContainer: dropZoneList,
+                        container: playerHandList,
+                        previousIndex: cardIndex,
+                        currentIndex: playerHandList.data.length
+                      },
+                      'discard' !== gameState.getValue().currentPlayerTurn.mode
+                    )
                   "
                 >
                 </app-card>
@@ -519,7 +522,7 @@
         }"
         cdkDropList
         #playerHandList="cdkDropList"
-        [cdkDropListData]="gameState.getValue().playerCards[you]"
+        [cdkDropListData]="myHand.getValue()"
         [cdkDropListConnectedTo]="[dropZoneList, discardPickupList]"
         class="example-list"
         cdkDropListOrientation="horizontal"
@@ -528,7 +531,7 @@
         <app-card
           fxFlex="0 0 56px"
           *ngFor="
-            let card of gameState.getValue().playerCards[you];
+            let card of myHand.getValue();
             let cardIndex = index;
             trackBy: trackCardByFn
           "
@@ -537,12 +540,15 @@
           size="small"
           [hidden]="!!route.snapshot.queryParamMap.get('hideCards')"
           (dblclick)="
-            validateDrop({
-              previousContainer: playerHandList,
-              container: dropZoneList,
-              previousIndex: cardIndex,
-              currentIndex: dropZoneList.data.length
-            })
+            pickUpFromPile(
+              {
+                previousContainer: playerHandList,
+                container: dropZoneList,
+                previousIndex: cardIndex,
+                currentIndex: dropZoneList.data.length
+              },
+              'discard' !== gameState.getValue().currentPlayerTurn.mode
+            )
           "
         >
         </app-card>
@@ -558,14 +564,13 @@
       >
         <p>
           Your hand (Value:
-          {{ calculateHandValue(gameState.getValue().playerCards[you]) }})
+          {{ calculateHandValue(myHand.getValue()) }})
         </p>
         <button
           nz-button
           nzType="default"
           [disabled]="
-            winningThreshold <
-              calculateHandValue(gameState.getValue().playerCards[you]) ||
+            winningThreshold < calculateHandValue(myHand.getValue()) ||
             !!gameState.getValue().dropZone.length ||
             you !== gameState.getValue().currentPlayer
           "

@@ -26,7 +26,9 @@ import chunk from 'lodash-es/chunk';
 import times from 'lodash-es/times';
 import findIndex from 'lodash-es/findIndex';
 import flatten from 'lodash-es/flatten';
+import isEqual from 'lodash-es/isEqual';
 import shuffle from 'lodash-es/shuffle';
+import set from 'lodash-es/set';
 import sortBy from 'lodash-es/sortBy';
 import groupBy from 'lodash-es/groupBy';
 import uniqBy from 'lodash-es/uniqBy';
@@ -90,6 +92,7 @@ export class GameComponent implements OnInit {
     )
     .subscribe(this.gameState$);
   you: number;
+  myHand = new BehaviorSubject<Card[]>([]);
 
   constructor(
     @Inject(DOCUMENT) public document: Document,
@@ -108,6 +111,9 @@ export class GameComponent implements OnInit {
           this.you = findIndex(
             this.gameState.getValue().players,
             (i) => i === this.route.snapshot.queryParamMap.get('name'),
+          );
+          this.reconcileHandDifference(
+            this.gameState.getValue().playerCards[this.you],
           );
         }),
       )
@@ -139,6 +145,18 @@ export class GameComponent implements OnInit {
     this.gameState.subscribe((game) => {
       this.playerCardChunks.next(chunk(game.playerCards, 5));
     });
+  }
+
+  reconcileHandDifference(gameStateHand: Card[]) {
+    const gameStateHandIds = gameStateHand.map((card) => card.id).sort();
+    const localHandIds = this.myHand
+      .getValue()
+      .map((card) => card.id)
+      .sort();
+    if (isEqual(gameStateHandIds, localHandIds)) {
+      return;
+    }
+    this.myHand.next(gameStateHand);
   }
 
   dealCards(initialDeck, numberOfPlayers: number) {
@@ -184,13 +202,19 @@ export class GameComponent implements OnInit {
   }
 
   lockDropZone() {
+    const currentValue = this.gameState.getValue();
     this.updateGameState({
-      ...this.gameState.getValue(),
+      ...currentValue,
       isDropZoneConfirmed: true,
       currentPlayerTurn: {
-        ...this.gameState.getValue().currentPlayerTurn,
+        ...currentValue.currentPlayerTurn,
         mode: 'draw',
       },
+      playerCards: set(
+        currentValue.playerCards,
+        [this.you],
+        this.myHand.getValue(),
+      ),
     });
   }
 
@@ -264,9 +288,6 @@ export class GameComponent implements OnInit {
   }
 
   drop(event: CdkDragDrop<Card[]> | any) {
-    if (this.you !== this.gameState.getValue().currentPlayer) {
-      return this.createMessage('error', `Please wait for your turn.`);
-    }
     if (event.previousContainer === event.container) {
       moveItemInArray(
         event.container.data,
@@ -274,6 +295,9 @@ export class GameComponent implements OnInit {
         event.currentIndex,
       );
     } else {
+      if (this.you !== this.gameState.getValue().currentPlayer) {
+        return this.createMessage('error', `Please wait for your turn.`);
+      }
       transferArrayItem(
         event.previousContainer.data,
         event.container.data,
@@ -433,6 +457,11 @@ export class GameComponent implements OnInit {
         },
         ...(currentValue.logs || []),
       ],
+      playerCards: set(
+        currentValue.playerCards,
+        [this.you],
+        this.myHand.getValue(),
+      ),
       ...newDeckUpdate,
     });
   }
