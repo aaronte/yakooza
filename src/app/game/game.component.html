@@ -136,6 +136,14 @@
                   {{
                     gameState.getValue().players[playerIndex + chunkIndex * 5]
                   }}
+                  <span style="color: #a8a8a8">
+                    (Score:
+                    {{
+                      gameState.getValue().scoreboard[
+                        playerIndex + chunkIndex * 5
+                      ].total
+                    }})</span
+                  >
                 </b>
               </p>
               <div
@@ -590,79 +598,131 @@
     nzShowIcon
     [ngStyle]="{ marginBottom: '16px' }"
   ></nz-alert>
-  <nz-table
-    #basicTable
-    [nzData]="data?.scoreboard"
-    [nzShowPagination]="false"
-    nzSize="small"
-  >
-    <thead>
-      <tr>
-        <th>Player</th>
-        <th
-          *ngFor="
-            let round of basicTable.data[0]?.scoreboard.scores;
-            let roundIndex = index
-          "
-        >
-          Round {{ roundIndex + 1 }}
-        </th>
-        <th [nzSortFn]="sortBy" nzSortOrder="descend">Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let tableData of basicTable?.data; let playerIndex = index">
-        <td>{{ tableData.name }}</td>
-
-        <td
-          *ngFor="
-            let score of tableData.scoreboard.scores;
-            let roundIndex = index
-          "
-          [ngStyle]="{
-            backgroundColor: !tableData.scoreboard.isLowestInRound[roundIndex]
-              ? '#f0f0f0'
-              : '#C1F7DC'
-          }"
-        >
-          <span>
-            {{ tableData.scoreboard.handValues[roundIndex] }}
-            <span
-              *ngIf="
-                0 !==
-                tableData.scoreboard.scores[roundIndex] -
-                  tableData.scoreboard.handValues[roundIndex]
-              "
-            >
-              (<span [ngStyle]="{ color: '#ff7875' }"
-                >+{{
-                  tableData.scoreboard.scores[roundIndex] -
-                    tableData.scoreboard.handValues[roundIndex]
-                }}</span
-              >)
+  <div>
+    <nz-table
+      #basicTable
+      [nzData]="data?.scoreboard"
+      [nzShowPagination]="false"
+      nzSize="small"
+      [nzScroll]="{ x: '650px' }"
+      class="u-showScrollBar"
+    >
+      <thead>
+        <tr>
+          <th nzWidth="160px" nzLeft nzEllipsis>Player</th>
+          <th [nzSortFn]="sortBy" nzSortOrder="descend" nzLeft nzWidth="100px">
+            Total
+          </th>
+          <th
+            *ngFor="
+              let round of basicTable.data[0]?.scoreboard.scores.reverse();
+              let roundIndex = index
+            "
+            nzWidth="120px"
+          >
+            Round
+            {{ basicTable.data[0]?.scoreboard.scores.length - roundIndex }}
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let tableData of basicTable?.data; let playerIndex = index">
+          <td nzLeft>
+            {{ tableData.name }}
+            <span *ngIf="data?.gameState?.gameScores[tableData.name] as score">
+              ({{ score }})
             </span>
-          </span>
-        </td>
-        <td>
-          {{ tableData.scoreboard.total }}
-        </td>
-      </tr>
-    </tbody>
-  </nz-table>
+          </td>
+          <td nzLeft>
+            {{ tableData.scoreboard.total }}
+          </td>
+          <td
+            *ngFor="
+              let score of tableData.scoreboard.scores.reverse();
+              let roundIndex = index
+            "
+            [ngStyle]="{
+              backgroundColor: !tableData.scoreboard.isLowestInRound[
+                tableData.scoreboard.scores.length - roundIndex - 1
+              ]
+                ? '#f0f0f0'
+                : '#C1F7DC'
+            }"
+          >
+            <ng-container
+              *ngIf="tableData.scoreboard.scores.length as scoresLength"
+            >
+              <span>
+                {{
+                  tableData.scoreboard.handValues[scoresLength - roundIndex - 1]
+                }}
+                <span
+                  *ngIf="
+                    0 <
+                    tableData.scoreboard.specialAdditions[
+                      scoresLength - roundIndex - 1
+                    ]?.penalty
+                  "
+                >
+                  (<span [ngStyle]="{ color: '#ff7875' }"
+                    >+{{
+                      tableData.scoreboard.specialAdditions[
+                        scoresLength - roundIndex - 1
+                      ]?.penalty
+                    }}</span
+                  >)
+                </span>
+                <span
+                  *ngIf="
+                    0 <
+                    tableData.scoreboard.specialAdditions[
+                      scoresLength - roundIndex - 1
+                    ]?.jokerValue
+                  "
+                >
+                  (<span [ngStyle]="{ color: '#135200' }"
+                    >+{{
+                      tableData.scoreboard.specialAdditions[
+                        scoresLength - roundIndex - 1
+                      ]?.jokerValue
+                    }}</span
+                  >)
+                </span>
+              </span>
+            </ng-container>
+          </td>
+        </tr>
+      </tbody>
+    </nz-table>
+  </div>
   <div [ngStyle]="{ padding: '16px 0' }">
     <nz-collapse>
       <nz-collapse-panel nzHeader="Advanced options">
         <p [ngStyle]="{ paddingBottom: '8px' }">
           Someone reach 100 yet? Wanna reset?
         </p>
-        <button
-          nz-button
-          (click)="setGameAsNotStarted(); drawerRef.close()"
-          [disabled]="you !== 0"
-        >
-          <i nz-icon nzType="sync"></i>
-          Reset game
-        </button>
+        <div fxLayout="row" fxLayoutGap="8px">
+          <div>
+            <button
+              nz-button
+              (click)="setGameAsNotStarted(); drawerRef.close()"
+              [disabled]="you !== 0"
+            >
+              <i nz-icon nzType="sync"></i>
+              Start new round
+            </button>
+          </div>
+          <div>
+            <button
+              nz-button
+              (click)="renewGame({ gameScores: {} }); drawerRef.close()"
+              [disabled]="you !== 0"
+            >
+              <i nz-icon nzType="sync"></i>
+              Reset game
+            </button>
+          </div>
+        </div>
       </nz-collapse-panel>
     </nz-collapse>
   </div>

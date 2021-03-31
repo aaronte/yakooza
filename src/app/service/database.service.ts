@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { AngularFirestore } from '@angular/fire/firestore';
 import { BehaviorSubject, throwError } from 'rxjs';
-import { concatMap, tap } from 'rxjs/operators';
+import { concatMap } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class DatabaseService {
@@ -30,10 +30,18 @@ export class DatabaseService {
         dropZone: [],
         currentPlayerTurn: { mode: 'discard' },
         scoreboard: [
-          { handValues: [], scores: [], isLowestInRound: [], total: 0 },
+          {
+            handValues: [],
+            isLowestInRound: [],
+            scores: [],
+            specialAdditions: [],
+            total: 0,
+          },
         ],
         calledGame: [],
         playerCards: [],
+        previousPlayerCards: [],
+        gameScores: {},
       });
   }
 
@@ -78,6 +86,10 @@ export class DatabaseService {
         {},
       ),
       playerCards: (update.playerCards || []).reduce(
+        (result, item, index) => ({ ...result, [index]: item }),
+        {},
+      ),
+      previousPlayerCards: (update.previousPlayerCards || []).reduce(
         (result, item, index) => ({ ...result, [index]: item }),
         {},
       ),

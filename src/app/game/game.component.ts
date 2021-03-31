@@ -49,7 +49,7 @@ audio.volume = 0.3;
  * - [x] Double click cards
  * - [x] Sound for turn
  * - [x] Reorder own cards
- * - [] Use jokers for straights
+ * - [x] Use jokers for straights
  * */
 @Component({
   selector: 'app-game',
@@ -63,22 +63,32 @@ export class GameComponent implements OnInit {
     drawerRef: NzDrawerRef<string>;
   }>;
   playerCardChunks: BehaviorSubject<Card[][][]> = new BehaviorSubject([]);
-  winningThreshold = 11;
+  winningThreshold = 7;
   gameState = new BehaviorSubject({
     currentPlayer: 0,
     currentRound: 0,
     deck: [],
     discard: [],
     gameName: '',
+    gameScores: {},
     hasStarted: false,
     players: [],
+    isDropZoneConfirmed: false,
     rounds: [],
     logs: [],
     dropZone: [],
     playerCards: [],
-    isDropZoneConfirmed: false,
+    previousPlayerCards: [],
     currentPlayerTurn: { mode: 'discard' },
-    scoreboard: [{ handValues: [], scores: [], isLowestInRound: [], total: 0 }],
+    scoreboard: [
+      {
+        handValues: [],
+        scores: [],
+        isLowestInRound: [],
+        specialAdditions: [],
+        total: 0,
+      },
+    ],
     calledGame: [],
   });
   gameState$ = new BehaviorSubject(null);
@@ -91,6 +101,7 @@ export class GameComponent implements OnInit {
         ...game,
         discard: Object.values(game.discard),
         playerCards: Object.values(game.playerCards),
+        previousPlayerCards: Object.values(game.previousPlayerCards),
       })),
     )
     .subscribe(this.gameState$);
@@ -116,7 +127,7 @@ export class GameComponent implements OnInit {
             (i) => i === this.route.snapshot.queryParamMap.get('name'),
           );
           this.reconcileHandDifference(
-            this.gameState.getValue().playerCards[this.you],
+            this.gameState.getValue().playerCards[this.you] || [],
           );
         }),
       )
@@ -370,6 +381,7 @@ export class GameComponent implements OnInit {
     const playerHandValues = this.gameState
       .getValue()
       .playerCards.map((hand) => this.calculateHandValue(hand));
+    const playerCards = this.gameState.getValue().playerCards;
     const newScoreboard = scoreboard.map((scoreboardItem, index) => {
       const roundMinimum = Math.min(...playerHandValues);
       const currentHandValue = playerHandValues[index];
@@ -377,8 +389,23 @@ export class GameComponent implements OnInit {
         this.you === index && roundMinimum === currentHandValue;
       const penalty = this.you !== index ? 0 : !isRealWinner ? 30 : 0;
       const realScore = currentHandValue + penalty;
-      const newScores = [...scoreboardItem.scores, realScore];
-      const intermediateTotal = scoreboardItem.total + realScore;
+      const jokersAvailable = playerCards[index].filter(
+        (card: Card) => card.id === joker.id,
+      );
+      const maxJokerValue = jokersAvailable.length * 10;
+      const currentTotal = scoreboardItem.total + realScore;
+      const gapToFifty = 50 - currentTotal;
+      const gapToOneHundred = 100 - currentTotal;
+      const jokerValue =
+        maxJokerValue === 0
+          ? 0
+          : gapToFifty > 0 && gapToFifty <= maxJokerValue
+          ? gapToFifty
+          : gapToOneHundred > 0 && gapToOneHundred <= maxJokerValue
+          ? gapToOneHundred
+          : 0;
+      const newScores = [...scoreboardItem.scores, realScore + jokerValue];
+      const intermediateTotal = currentTotal + jokerValue;
       const total =
         50 === intermediateTotal
           ? 25
@@ -391,6 +418,10 @@ export class GameComponent implements OnInit {
         isLowestInRound: [
           ...scoreboardItem.isLowestInRound,
           roundMinimum === realScore,
+        ],
+        specialAdditions: [
+          ...scoreboardItem.specialAdditions,
+          { jokerValue, penalty },
         ],
         total: roundMinimum === realScore ? scoreboardItem.total : total,
       };
@@ -503,19 +534,23 @@ export class GameComponent implements OnInit {
       nzContent: this.scoreDrawerTemplate,
       nzWidth: '700px',
       nzContentParams: {
-        scoreboard: transformedScoreboard,
         calledGame: calledGame,
+        gameState: this.gameState.getValue(),
+        scoreboard: transformedScoreboard,
       },
     });
   }
 
-  async renewGame() {
+  async renewGame(gameState = {}) {
     console.log('Starting game...');
-    await this.resetCardDistribution();
+    const totalScores = this.gameState
+      .getValue()
+      .scoreboard.map(({ total }) => total);
+    const currentGameState = this.gameState.getValue();
     await this.updateGameState({
-      ...this.gameState.getValue(),
+      ...currentGameState,
+      ...this.getResetCardDistributionUpdate(),
       calledGame: [],
-      currentPlayer: 0,
       currentRound: 0,
       hasStarted: true,
       logs: [],
@@ -523,8 +558,19 @@ export class GameComponent implements OnInit {
         handValues: [],
         isLowestInRound: [],
         scores: [],
+        specialAdditions: [],
         total: 0,
       })),
+      gameScores: totalScores.reduce((result, next, index) => {
+        const playerName = currentGameState.players[index];
+        const currentGameScore = currentGameState.gameScores[playerName] || 0;
+        const scoreToAdd = Math.min(...totalScores) === next ? 1 : 0;
+        return {
+          ...result,
+          [playerName]: currentGameScore + scoreToAdd,
+        };
+      }, {}),
+      ...gameState,
     });
   }
 
